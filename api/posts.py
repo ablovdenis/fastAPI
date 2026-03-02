@@ -1,5 +1,5 @@
-from data_storage_and_processing.configSQL import *
-from data_storage_and_processing.schemas import *
+from data_base.configSQL import *
+from schems.posts import *
 
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
