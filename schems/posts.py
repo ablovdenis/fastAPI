@@ -2,6 +2,10 @@ from pydantic import BaseModel, Field
 from datetime import datetime as dati
 from typing import List
 
+from .users import UserOut
+from .categories import CategoryOut
+from .locations import LocationOut
+from .comments import CommentOut
 
 class PostUpdate(BaseModel):
     title: str = Field(default=None)

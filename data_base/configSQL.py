@@ -1,5 +1,12 @@
 from sqlalchemy import create_engine
-from .models import *
+
+from .models.BaseModels import Base
+from .models.CategoryModels import CategoryModel
+from .models.UserModels import UserModel
+from .models.PostModels import PostModel
+from .models.LocationModels import LocationModel
+from .models.CommentModels import CommentModel
+
 from sqlalchemy.orm import sessionmaker
 
 
