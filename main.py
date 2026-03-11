@@ -1,6 +1,9 @@
 from fastapi import FastAPI
+from src.api import users, categories, locations, posts, comments
+from src.infrastructure.sqlite.configSQL import Base, engine
+from src.infrastructure.sqlite.models import UserModels, PostModels, LocationModels, CategoryModels, CommentModels # noqa
 
-from api import categories, comments, locations, posts, users
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
