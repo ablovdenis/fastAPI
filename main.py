@@ -3,7 +3,7 @@ from src.api import users, categories, locations, posts, comments
 from src.infrastructure.sqlite.configSQL import Base, engine
 from src.infrastructure.sqlite.models import UserModels, PostModels, LocationModels, CategoryModels, CommentModels # noqa
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine) # После добавления alembic выполнение данной строки скорее всего не нужно.
 
 app = FastAPI()
 
