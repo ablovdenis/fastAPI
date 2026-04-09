@@ -2,11 +2,11 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from ..domain.users.use_cases.MethodsForUser import MethodsForUser
+from ..domain.users.use_cases.crud_users import MethodsForUser
 
 
-from ..infrastructure.sqlite.configSQL import get_db
-from ..infrastructure.sqlite.models.UserModels import UserModel
+from ..infrastructure.sqlite.database import get_db
+from ..infrastructure.sqlite.models.user_models import UserModel
 from ..schems.users import UserCreate, UserOut, UserUpdate
 
 router = APIRouter(prefix='/users', tags=['Пользователи'])
@@ -18,10 +18,10 @@ def list_users(skip: int = 0, limit: int = 20, DataBase: Session = Depends(get_d
     return use_case.get(DataBase, skip, limit)
 
 
-@router.get('/{user_id}', response_model=UserOut, summary='Получить пользователя:')
-def get_user(user_id: int, DataBase: Session = Depends(get_db)) -> UserOut:
+@router.get('/{nickname}', response_model=UserOut, summary='Получить пользователя:')
+def get_user(nickname: str, DataBase: Session = Depends(get_db)) -> UserOut:
     use_case = MethodsForUser()
-    return use_case.get_detail(DataBase, user_id)
+    return use_case.get_detail(DataBase, nickname)
 
 
 @router.post('/', response_model=UserOut, status_code=status.HTTP_201_CREATED,
@@ -31,15 +31,15 @@ def create_user(payload: UserCreate, DataBase: Session = Depends(get_db)) -> Use
     return use_case.create(DataBase, payload)
 
 
-@router.put('/{user_id}', response_model=UserOut, summary='Редактировать профиль:')
-def update_user(user_id: int, payload: UserUpdate,
+@router.put('/{nickname}', response_model=UserOut, summary='Редактировать профиль:')
+def update_user(nickname: str, payload: UserUpdate,
                 DataBase: Session = Depends(get_db)) -> UserOut:
     use_case = MethodsForUser()
-    return use_case.update(DataBase, user_id, payload)
+    return use_case.update(DataBase, nickname, payload)
 
 
-@router.delete('/{user_id}', status_code=status.HTTP_204_NO_CONTENT,
+@router.delete('/{nickname}', status_code=status.HTTP_204_NO_CONTENT,
                summary='Удалить аккаунт:')
-def delete_user(user_id: int, DataBase: Session = Depends(get_db)):
+def delete_user(nickname: str, DataBase: Session = Depends(get_db)):
     use_case = MethodsForUser()
-    use_case.destroy(DataBase, user_id)
+    use_case.destroy(DataBase, nickname)

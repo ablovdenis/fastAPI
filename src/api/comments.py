@@ -2,12 +2,12 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from ..domain.comments.use_cases.MethodsForComment import MethodsForComment
+from ..domain.comments.use_cases.crud_comments import MethodsForComment
 
-from ..infrastructure.sqlite.configSQL import get_db
-from ..infrastructure.sqlite.models.CommentModels import CommentModel
-from ..infrastructure.sqlite.models.PostModels import PostModel
-from ..infrastructure.sqlite.models.UserModels import UserModel
+from ..infrastructure.sqlite.database import get_db
+from ..infrastructure.sqlite.models.comment_models import CommentModel
+from ..infrastructure.sqlite.models.post_models import PostModel
+from ..infrastructure.sqlite.models.user_models import UserModel
 from ..schems.comments import CommentCreate, CommentOut, CommentUpdate
 
 router = APIRouter(prefix='/comments', tags=['Комментарии'])

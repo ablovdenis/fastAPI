@@ -1,7 +1,8 @@
 from fastapi import FastAPI
+from src.infrastructure.sqlite.models import category_models, comment_models, location_models, post_models
 from src.api import users, categories, locations, posts, comments
-from src.infrastructure.sqlite.configSQL import Base, engine
-from src.infrastructure.sqlite.models import UserModels, PostModels, LocationModels, CategoryModels, CommentModels # noqa
+# from src.infrastructure.sqlite.database import Base, engine
+from src.infrastructure.sqlite.models import user_models # noqa
 
 # Base.metadata.create_all(bind=engine) # После добавления alembic выполнение данной строки скорее всего не нужно.
 

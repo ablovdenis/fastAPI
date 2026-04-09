@@ -3,9 +3,9 @@ from typing import List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from ..models.CommentModels import CommentModel
-from ..models.PostModels import PostModel
-from ..models.UserModels import UserModel
+from ..models.comment_models import CommentModel
+from ..models.post_models import PostModel
+from ..models.user_models import UserModel
 from ....schems.comments import CommentCreate, CommentUpdate
 
 

@@ -3,7 +3,7 @@ from typing import List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from ..models.LocationModels import LocationModel
+from ..models.location_models import LocationModel
 from ....schems.locations import LocationUpdateAndCreate
 
 

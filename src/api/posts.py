@@ -2,13 +2,13 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
-from ..domain.posts.use_cases.MethodsForPost import MethodsForPost
+from ..domain.posts.use_cases.crud_posts import MethodsForPost
 
-from ..infrastructure.sqlite.configSQL import get_db
-from ..infrastructure.sqlite.models.CategoryModels import CategoryModel
-from ..infrastructure.sqlite.models.LocationModels import LocationModel
-from ..infrastructure.sqlite.models.PostModels import PostModel
-from ..infrastructure.sqlite.models.UserModels import UserModel
+from ..infrastructure.sqlite.database import get_db
+from ..infrastructure.sqlite.models.category_models import CategoryModel
+from ..infrastructure.sqlite.models.location_models import LocationModel
+from ..infrastructure.sqlite.models.post_models import PostModel
+from ..infrastructure.sqlite.models.user_models import UserModel
 from ..schems.posts import PostCreate, PostDetail, PostOut, PostUpdate
 
 router = APIRouter(prefix='/posts', tags=['Посты'])

@@ -3,7 +3,7 @@ from typing import List, Type
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from ..models.UserModels import UserModel
+from ..models.user_models import UserModel
 from ....schems.users import UserCreate, UserUpdate
 
 
@@ -14,8 +14,8 @@ class UserRepository:
     def get(self, DataBase: Session, skip: int, limit: int) -> List[UserModel]:
         return DataBase.query(UserModel).offset(skip).limit(limit).all()
 
-    def get_detail(self, DataBase: Session, user_id: int) -> UserModel:
-        user = DataBase.query(UserModel).filter(UserModel.id == user_id).first()
+    def get_detail(self, DataBase: Session, nickname: str) -> UserModel:
+        user = DataBase.query(UserModel).filter(UserModel.nickname == nickname).first()
         if not user:
             raise HTTPException(status_code=404, detail='Пользователя не существует.')
         return user
@@ -43,8 +43,8 @@ class UserRepository:
         DataBase.refresh(user)
         return user
 
-    def update(self, DataBase: Session, user_id: int, payload: UserUpdate) -> UserModel:
-        user = DataBase.query(UserModel).filter(UserModel.id == user_id).first()
+    def update(self, DataBase: Session, nickname: str, payload: UserUpdate) -> UserModel:
+        user = DataBase.query(UserModel).filter(UserModel.nickname == nickname).first()
         if not user:
             raise HTTPException(status_code=404, detail='Пользователь не существует.')
         update_data = payload.model_dump(exclude_unset=True)
@@ -54,8 +54,8 @@ class UserRepository:
         DataBase.refresh(user)
         return user
 
-    def destroy(self, DataBase: Session, user_id: int):
-        user = DataBase.query(UserModel).filter(UserModel.id == user_id).first()
+    def destroy(self, DataBase: Session, nickname: str):
+        user = DataBase.query(UserModel).filter(UserModel.nickname == nickname).first()
         if not user:
             raise HTTPException(status_code=404, detail='Пользователь не существует.')
         DataBase.delete(user)

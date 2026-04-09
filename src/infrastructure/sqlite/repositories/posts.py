@@ -3,10 +3,10 @@ from typing import List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 
-from ..models.CategoryModels import CategoryModel
-from ..models.LocationModels import LocationModel
-from ..models.PostModels import PostModel
-from ..models.UserModels import UserModel
+from ..models.category_models import CategoryModel
+from ..models.location_models import LocationModel
+from ..models.post_models import PostModel
+from ..models.user_models import UserModel
 from ....schems.posts import PostCreate, PostUpdate
 
 

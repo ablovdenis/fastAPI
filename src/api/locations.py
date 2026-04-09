@@ -2,10 +2,10 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from ..domain.locations.use_cases.MethodsForLocation import MethodsForLocation
+from ..domain.locations.use_cases.crud_locations import MethodsForLocation
 
-from ..infrastructure.sqlite.configSQL import get_db
-from ..infrastructure.sqlite.models.LocationModels import LocationModel
+from ..infrastructure.sqlite.database import get_db
+from ..infrastructure.sqlite.models.location_models import LocationModel
 from ..schems.locations import LocationOut, LocationUpdateAndCreate
 
 router = APIRouter(prefix='/locations', tags=['Местоположения'])

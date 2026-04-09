@@ -1,11 +1,11 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from ..domain.categories.use_cases.MethodsForCategory import MethodsForCategory
+from ..domain.categories.use_cases.crud_categories import MethodsForCategory
 
-from ..infrastructure.sqlite.configSQL import get_db
-from ..infrastructure.sqlite.models.CategoryModels import CategoryModel
+from ..infrastructure.sqlite.database import get_db
+from ..infrastructure.sqlite.models.category_models import CategoryModel
 from ..schems.categories import CategoryOut, CategoryUpdateAndCreate
 
 router = APIRouter(prefix='/categories', tags=['Категории постов'])

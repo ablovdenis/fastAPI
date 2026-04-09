@@ -3,7 +3,7 @@ from typing import List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from ..models.CategoryModels import CategoryModel
+from ..models.category_models import CategoryModel
 from ....schems.categories import CategoryUpdateAndCreate
 
 
