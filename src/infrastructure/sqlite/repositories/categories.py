@@ -14,9 +14,9 @@ class CategoryRepository:
     def get(self, DataBase: Session, skip: int, limit: int) -> List[CategoryModel]:
         return DataBase.query(CategoryModel).offset(skip).limit(limit).all()
 
-    def get_detail(self, DataBase: Session, category_id: int) -> CategoryModel:
+    def get_detail(self, DataBase: Session, category_slug: str) -> CategoryModel:
         category = DataBase.query(CategoryModel).filter(
-            CategoryModel.id == category_id
+            CategoryModel.slug == category_slug
         ).first()
         if not category:
             raise HTTPException(status_code=404, detail='Категория не существует.')
@@ -34,9 +34,9 @@ class CategoryRepository:
         DataBase.refresh(category)
         return category
 
-    def update(self, DataBase: Session, category_id: int, payload: CategoryUpdateAndCreate) -> CategoryModel:
+    def update(self, DataBase: Session, category_slug: str, payload: CategoryUpdateAndCreate) -> CategoryModel:
         category = DataBase.query(CategoryModel).filter(
-            CategoryModel.id == category_id
+            CategoryModel.slug == category_slug
         ).first()
         if not category:
             raise HTTPException(status_code=404, detail='Категория не существует.')
@@ -46,9 +46,9 @@ class CategoryRepository:
         DataBase.refresh(category)
         return category
 
-    def destroy(self, DataBase: Session, category_id: int):
+    def destroy(self, DataBase: Session, category_slug: str):
         category = DataBase.query(CategoryModel).filter(
-            CategoryModel.id == category_id
+            CategoryModel.slug == category_slug
         ).first()
         if not category:
             raise HTTPException(status_code=404, detail='Категория не существует.')

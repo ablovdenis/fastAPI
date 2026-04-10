@@ -17,14 +17,13 @@ def list_categories(skip: int = 0, limit: int = 10,
                     DataBase: Session = Depends(get_db)) -> List[CategoryOut]:
     use_case = MethodsForCategory()
     return use_case.get(DataBase, skip, limit)
-    
 
 
-@router.get('/{category_id}', response_model=CategoryOut,
+@router.get('/{category_slug}', response_model=CategoryOut,
             summary='Получить категорию:')
-def get_category(category_id: int, DataBase: Session = Depends(get_db)) -> CategoryOut:
+def get_category(category_slug: str, DataBase: Session = Depends(get_db)) -> CategoryOut:
     use_case = MethodsForCategory()
-    return use_case.get_detail(DataBase, category_id)
+    return use_case.get_detail(DataBase, category_slug)
 
 
 @router.post('/', response_model=CategoryOut,
@@ -36,16 +35,16 @@ def create_category(payload: CategoryUpdateAndCreate,
     return use_case.create(DataBase, payload)
 
 
-@router.put('/{category_id}', response_model=CategoryOut,
+@router.put('/{category_slug}', response_model=CategoryOut,
             summary='Изменить категорию:')
-def update_category(category_id: int, payload: CategoryUpdateAndCreate,
+def update_category(category_slug: str, payload: CategoryUpdateAndCreate,
                     DataBase: Session = Depends(get_db)) -> CategoryOut:
     use_case = MethodsForCategory()
-    return use_case.update(DataBase, category_id, payload)
+    return use_case.update(DataBase, category_slug, payload)
 
 
-@router.delete('/{category_id}', status_code=status.HTTP_204_NO_CONTENT,
+@router.delete('/{category_slug}', status_code=status.HTTP_204_NO_CONTENT,
                summary='Удалить категорию:')
-def delete_category(category_id: int, DataBase: Session = Depends(get_db)):
+def delete_category(category_slug: str, DataBase: Session = Depends(get_db)):
     use_case = MethodsForCategory()
-    use_case.destroy(DataBase, category_id)
+    use_case.destroy(DataBase, category_slug)

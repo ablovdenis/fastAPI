@@ -14,9 +14,9 @@ class LocationRepository:
     def get(self, DataBase: Session, skip: int, limit: int) -> List[LocationModel]:
         return DataBase.query(LocationModel).offset(skip).limit(limit).all()
 
-    def get_detail(self, DataBase: Session, location_id: int) -> LocationModel:
+    def get_detail(self, DataBase: Session, name: str) -> LocationModel:
         location = DataBase.query(LocationModel).filter(
-            LocationModel.id == location_id
+            LocationModel.name == name
         ).first()
         if not location:
             raise HTTPException(status_code=404,
@@ -30,9 +30,9 @@ class LocationRepository:
         DataBase.refresh(location)
         return location
 
-    def update(self, DataBase: Session, location_id: int, payload: LocationUpdateAndCreate) -> LocationModel:
+    def update(self, DataBase: Session, name: str, payload: LocationUpdateAndCreate) -> LocationModel:
         location = DataBase.query(LocationModel).filter(
-            LocationModel.id == location_id
+            LocationModel.name == name
         ).first()
         if not location:
             raise HTTPException(status_code=404,
@@ -43,9 +43,9 @@ class LocationRepository:
         DataBase.refresh(location)
         return location
 
-    def destroy(self, DataBase: Session, location_id: int):
+    def destroy(self, DataBase: Session, name: str):
         location = DataBase.query(LocationModel).filter(
-            LocationModel.id == location_id
+            LocationModel.name == name
         ).first()
         if not location:
             raise HTTPException(status_code=404,

@@ -14,14 +14,14 @@ class MethodsForLocation:
     def get(self, DataBase: Session, skip: int, limit: int) -> List[LocationOut]:
         return [LocationOut.model_validate(user) for user in self._repo.get(DataBase, skip, limit)]
 
-    def get_detail(self, DataBase: Session, location_id: int) -> LocationOut:
-        return LocationOut.model_validate(self._repo.get_detail(DataBase, location_id))
+    def get_detail(self, DataBase: Session, name: str) -> LocationOut:
+        return LocationOut.model_validate(self._repo.get_detail(DataBase, name))
 
     def create(self, DataBase: Session, payload: LocationUpdateAndCreate) -> LocationOut:
         return LocationOut.model_validate(self._repo.create(DataBase, payload))
 
-    def update(self, DataBase: Session, location_id: int, payload: LocationUpdateAndCreate) -> LocationOut:
-        return LocationOut.model_validate(self._repo.update(DataBase, location_id, payload))
+    def update(self, DataBase: Session, name: str, payload: LocationUpdateAndCreate) -> LocationOut:
+        return LocationOut.model_validate(self._repo.update(DataBase, name, payload))
     
-    def destroy(self, DataBase: Session, location_id: int):
-        self._repo.destroy(DataBase, location_id)
+    def destroy(self, DataBase: Session, name: str):
+        self._repo.destroy(DataBase, name)

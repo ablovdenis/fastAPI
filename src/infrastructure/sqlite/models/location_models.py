@@ -9,5 +9,5 @@ class LocationModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime(timezone=True), default=dati.utcnow)
     is_published = Column(Boolean, default=True, nullable=False)
-    name = Column(String, nullable=False)
+    name = Column(String, unique=True, nullable=False)
     posts = relationship("PostModel", back_populates="location", cascade="all, delete-orphan")

@@ -19,11 +19,11 @@ def list_locations(skip: int = 0, limit: int = 20,
     return use_case.get(DataBase, skip, limit)
 
 
-@router.get('/{location_id}', response_model=LocationOut,
+@router.get('/{name}', response_model=LocationOut,
             summary='Получить местоположение:')
-def get_location(location_id: int, DataBase: Session = Depends(get_db)) -> LocationOut:
+def get_location(name: str, DataBase: Session = Depends(get_db)) -> LocationOut:
     use_case = MethodsForLocation()
-    return use_case.get_detail(DataBase, location_id)
+    return use_case.get_detail(DataBase, name)
 
 
 @router.post('/', response_model=LocationOut,
@@ -35,16 +35,16 @@ def create_location(payload: LocationUpdateAndCreate,
     return use_case.create(DataBase, payload)
 
 
-@router.put('/{location_id}', response_model=LocationOut,
+@router.put('/{name}', response_model=LocationOut,
             summary='Сменить местоположение:')
-def update_location(location_id: int, payload: LocationUpdateAndCreate,
+def update_location(name: str, payload: LocationUpdateAndCreate,
                     DataBase: Session = Depends(get_db)) -> LocationOut:
     use_case = MethodsForLocation()
-    return use_case.update(DataBase, location_id, payload)
+    return use_case.update(DataBase, name, payload)
 
 
-@router.delete('/{location_id}', status_code=status.HTTP_204_NO_CONTENT,
+@router.delete('/{name}', status_code=status.HTTP_204_NO_CONTENT,
                summary='Удалить местоположение:')
-def delete_location(location_id: int, DataBase: Session = Depends(get_db)):
+def delete_location(name: str, DataBase: Session = Depends(get_db)):
     use_case = MethodsForLocation()
-    use_case.destroy(DataBase, location_id)
+    use_case.destroy(DataBase, name)
