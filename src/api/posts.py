@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 
 from ..domain.posts.use_cases.crud_posts import MethodsForPost
 
-from src.core.exceptions.domain_exceptions import PostNotFoundByIDException, PostDontCreateException
+from src.core.exceptions.domain_exceptions import (PostNotFoundByIDException,
+                                                   PostDontCreateException,
+                                                   PostDontChangeException)
 
 from ..infrastructure.sqlite.database import get_db
 from ..schems.posts import PostCreate, PostDetail, PostOut, PostUpdate
@@ -54,7 +56,7 @@ def update_post(post_id: int, payload: PostUpdate,
         return use_case.update(DataBase, post_id, payload)
     except PostNotFoundByIDException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())
-    except PostDontCreateException as e:
+    except PostDontChangeException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())
 
 

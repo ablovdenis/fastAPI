@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+from fastapi import HTTPException, status
 from datetime import datetime as dati
 from typing import List
 
@@ -6,6 +7,17 @@ from .users import UserOut
 from .categories import CategoryOut
 from .locations import LocationOut
 from .comments import CommentOut
+
+
+def valid_title(title: str):
+    len_title = len(title)
+    if len_title < 5 or len_title > 40:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail='Заголовок поста должен быть длиннее 4 символов и короче 41 символа.'
+        )
+    return title
+
 
 class PostUpdate(BaseModel):
     title: str = Field(default=None)
@@ -16,8 +28,15 @@ class PostUpdate(BaseModel):
     location_name: str = Field(default=None)
     category_slug: str = Field(default=None)
 
+    @field_validator("title", mode="after")
+    @staticmethod
+    def check_title(title: str):
+         return valid_title(title)
+
+
 class PostCreate(PostUpdate):
     author_nickname: str = Field(default=None)
+
 
 class PostOut(BaseModel):
     id: int
@@ -31,8 +50,14 @@ class PostOut(BaseModel):
     category_id: int = Field(default=None)
     author_id: int = Field(default=None)
 
+    @field_validator("title", mode="after")
+    @staticmethod
+    def check_title(title: str):
+         return valid_title(title)
+
     class Config:
         from_attributes = True
+
 
 class PostDetail(PostOut):
     author: UserOut

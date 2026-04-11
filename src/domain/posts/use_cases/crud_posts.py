@@ -9,7 +9,9 @@ from src.core.exceptions.database_exceptions import (UserNotFoundException,
                                                      CategoryNotFoundException,
                                                      LocationNotFoundException, 
                                                      PostNotFoundException)
-from src.core.exceptions.domain_exceptions import PostNotFoundByIDException, PostDontCreateException
+from src.core.exceptions.domain_exceptions import (PostNotFoundByIDException,
+                                                   PostDontCreateException,
+                                                   PostDontChangeException)
 
 
 class MethodsForPost:
@@ -43,9 +45,9 @@ class MethodsForPost:
         except PostNotFoundException:
             raise PostNotFoundByIDException(post_id)
         except CategoryNotFoundException:
-            raise PostDontCreateException('категория не найдена')
+            raise PostDontChangeException('категория не найдена')
         except LocationNotFoundException:
-            raise PostDontCreateException('локация не найдена')
+            raise PostDontChangeException('локация не найдена')
         return PostOut.model_validate(post_model)
     
     def destroy(self, DataBase: Session, post_id: int):
