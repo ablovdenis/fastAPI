@@ -13,15 +13,23 @@ class PostUpdate(BaseModel):
     pub_date: dati = Field(default=None)
     is_published: bool = Field(default=None)
     image: str = Field(default=None)
-    location_id: int = Field(default=None)
-    category_id: int = Field(default=None)
+    location_name: str = Field(default=None)
+    category_slug: str = Field(default=None)
 
 class PostCreate(PostUpdate):
-    author_id: int = Field(default=None)
+    author_nickname: str = Field(default=None)
 
-class PostOut(PostCreate):
+class PostOut(BaseModel):
     id: int
     created_at: dati
+    title: str = Field(default=None)
+    text: str = Field(default=None)
+    pub_date: dati = Field(default=None)
+    is_published: bool = Field(default=None)
+    image: str = Field(default=None)
+    location_id: int = Field(default=None)
+    category_id: int = Field(default=None)
+    author_id: int = Field(default=None)
 
     class Config:
         from_attributes = True

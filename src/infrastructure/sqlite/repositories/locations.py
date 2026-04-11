@@ -1,11 +1,12 @@
 from typing import List
 
-from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..models.location_models import LocationModel
 from ....schems.locations import LocationUpdateAndCreate
 
+from src.core.exceptions.database_exceptions import LocationNotFoundException, LocationAlreadyExistsException
 
 class LocationRepository:
     def __init__(self):
@@ -19,14 +20,16 @@ class LocationRepository:
             LocationModel.name == name
         ).first()
         if not location:
-            raise HTTPException(status_code=404,
-                                detail='Местоположение не существует.')
+            raise LocationNotFoundException()
         return location
 
     def create(self, DataBase: Session, payload: LocationUpdateAndCreate) -> LocationModel:
         location = LocationModel(**payload.model_dump())
-        DataBase.add(location)
-        DataBase.commit()
+        try:
+            DataBase.add(location)
+            DataBase.commit()
+        except IntegrityError:
+            raise LocationAlreadyExistsException()
         DataBase.refresh(location)
         return location
 
@@ -35,11 +38,13 @@ class LocationRepository:
             LocationModel.name == name
         ).first()
         if not location:
-            raise HTTPException(status_code=404,
-                                detail='Местоположение не существует.')
+            raise LocationNotFoundException()
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(location, field, value)
-        DataBase.commit()
+        try:
+            DataBase.commit()
+        except IntegrityError:
+            raise LocationAlreadyExistsException()
         DataBase.refresh(location)
         return location
 
@@ -48,7 +53,6 @@ class LocationRepository:
             LocationModel.name == name
         ).first()
         if not location:
-            raise HTTPException(status_code=404,
-                                detail='Местоположение не существует.')
+            raise LocationNotFoundException()
         DataBase.delete(location)
         DataBase.commit()

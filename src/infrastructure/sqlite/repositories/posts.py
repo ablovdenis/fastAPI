@@ -1,6 +1,5 @@
 from typing import List
 
-from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 
 from ..models.category_models import CategoryModel
@@ -9,6 +8,10 @@ from ..models.post_models import PostModel
 from ..models.user_models import UserModel
 from ....schems.posts import PostCreate, PostUpdate
 
+from src.core.exceptions.database_exceptions import (UserNotFoundException,
+                                                     CategoryNotFoundException,
+                                                     LocationNotFoundException, 
+                                                     PostNotFoundException)
 
 class PostRepository:
     def __init__(self):
@@ -36,29 +39,37 @@ class PostRepository:
             .first()
         )
         if not post:
-            raise HTTPException(status_code=404, detail='Публикация не существует.')
+            raise PostNotFoundException()
         return post
 
     def create(self, DataBase: Session, payload: PostCreate) -> PostModel:
         author = DataBase.query(UserModel).filter(
-            UserModel.id == payload.author_id
+            UserModel.nickname == payload.author_nickname
         ).first()
         if not author:
-            raise HTTPException(status_code=404, detail='Автор не существует.')
-        
-        categori = DataBase.query(CategoryModel).filter(
-            CategoryModel.id == payload.category_id
+            raise UserNotFoundException()
+
+        category = DataBase.query(CategoryModel).filter(
+            CategoryModel.slug == payload.category_slug
         ).first()
-        if not categori:
-            raise HTTPException(status_code=404, detail='Категория не существует.')
+        if not category:
+            raise CategoryNotFoundException()
 
         location = DataBase.query(LocationModel).filter(
-            LocationModel.id == payload.location_id
+            LocationModel.name == payload.location_name
         ).first()
         if not location:
-            raise HTTPException(status_code=404, detail='Локация не существует.')
+            raise LocationNotFoundException()
 
-        post = PostModel(**payload.model_dump())
+        dict_ = (payload.model_dump(
+                    exclude={'location_name',
+                             'author_nickname',
+                             'category_slug'}
+                    ) |
+                 {'location_id':location.id,
+                  'category_id':category.id,
+                  'author_id':author.id})
+        post = PostModel(**dict_)
         DataBase.add(post)
         DataBase.commit()
         DataBase.refresh(post)
@@ -67,22 +78,29 @@ class PostRepository:
     def update(self, DataBase: Session, post_id: int, payload: PostUpdate) -> PostModel:
         post = DataBase.query(PostModel).filter(PostModel.id == post_id).first()
         if not post:
-            raise HTTPException(status_code=404, detail='Публикация не существует.')
+            raise PostNotFoundException()
         
-        categori = DataBase.query(CategoryModel).filter(
-            CategoryModel.id == payload.category_id
+        category = DataBase.query(CategoryModel).filter(
+            CategoryModel.slug == payload.category_slug
         ).first()
-        if not categori:
-            raise HTTPException(status_code=404, detail='Категория не существует.')
+        if not category:
+            raise CategoryNotFoundException()
 
         location = DataBase.query(LocationModel).filter(
-            LocationModel.id == payload.location_id
+            LocationModel.name == payload.location_name
         ).first()
         if not location:
-            raise HTTPException(status_code=404, detail='Локация не существует.')
+            raise LocationNotFoundException()
 
+        dict_ = (payload.model_dump(
+                    exclude={'location_name',
+                             'author_nickname',
+                             'category_slug'}
+                    ) |
+                 {'location_id':location.id,
+                  'category_id':category.id})
 
-        for field, value in payload.model_dump(exclude_unset=True).items():
+        for field, value in dict_.items():
             setattr(post, field, value)
         DataBase.commit()
         DataBase.refresh(post)
@@ -91,6 +109,6 @@ class PostRepository:
     def destroy(self, DataBase: Session, post_id: int):
         post = DataBase.query(PostModel).filter(PostModel.id == post_id).first()
         if not post:
-            raise HTTPException(status_code=404, detail='Публикация не существует.')
+            raise PostNotFoundException()
         DataBase.delete(post)
         DataBase.commit()

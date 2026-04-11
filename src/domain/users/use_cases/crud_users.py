@@ -2,6 +2,13 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
+from src.core.exceptions.domain_exceptions import (UserNicknameIsNotUniqueException,
+                                                   UserNotFoundByNicknameException,
+                                                   UserEmailIsNotUniqueException)
+from src.core.exceptions.database_exceptions import (UserNotFoundException,
+                                                     UserByNicknameAlreadyExistsException,
+                                                     UserByEmailAlreadyExistsException)
+
 from ....infrastructure.sqlite.repositories.users import UserRepository
 from ....schems.users import UserCreate, UserOut, UserUpdate
 
@@ -14,13 +21,32 @@ class MethodsForUser:
         return [UserOut.model_validate(user) for user in self._repo.get(DataBase, skip, limit)]
 
     def get_detail(self, DataBase: Session, nickname: str) -> UserOut:
-        return UserOut.model_validate(self._repo.get_detail(DataBase, nickname))
+        try:
+            user_model = self._repo.get_detail(DataBase, nickname)
+        except UserNotFoundException:
+            raise UserNotFoundByNicknameException(nickname)
+        return UserOut.model_validate(user_model)
 
     def create(self, DataBase: Session, payload: UserCreate) -> UserOut:
-        return UserOut.model_validate(self._repo.create(DataBase, payload))
+        try:
+            user_model = self._repo.create(DataBase, payload)
+        except UserByNicknameAlreadyExistsException:
+            raise UserNicknameIsNotUniqueException(payload.nickname)
+        except UserByEmailAlreadyExistsException:
+            raise UserEmailIsNotUniqueException(payload.email)
+        return UserOut.model_validate(user_model)
 
     def update(self, DataBase: Session, nickname: str, payload: UserUpdate) -> UserOut:
-        return UserOut.model_validate(self._repo.update(DataBase, nickname, payload))
+        try:
+            user_model = self._repo.update(DataBase, nickname, payload)
+        except UserNotFoundException:
+            raise UserNotFoundByNicknameException(nickname)
+        except UserByEmailAlreadyExistsException:
+            raise UserEmailIsNotUniqueException(payload.email)
+        return UserOut.model_validate(user_model)
     
-    def destroy(self, DataBase: Session, nickname: str):
-        self._repo.destroy(DataBase, nickname)
+    def destroy(self, DataBase: Session, nickname: str) -> UserOut:
+        try:
+            self._repo.destroy(DataBase, nickname)
+        except UserNotFoundException:
+            raise UserNotFoundByNicknameException(nickname)

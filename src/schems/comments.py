@@ -7,9 +7,11 @@ class CommentUpdate(BaseModel):
 
 class CommentCreate(CommentUpdate):
     post_id: int
-    author_id: int
+    author_nickname: str
 
-class CommentOut(CommentCreate):
+class CommentOut(CommentUpdate):
+    post_id: int
+    author_id: int
     id: int
     created_at: dati
 

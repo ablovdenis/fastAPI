@@ -7,7 +7,11 @@ class UserNotFoundException(BaseDatabaseException):
     pass
 
 
-class UserAlreadyExistsException(BaseDatabaseException):
+class UserByNicknameAlreadyExistsException(BaseDatabaseException):
+    pass
+
+
+class UserByEmailAlreadyExistsException(BaseDatabaseException):
     pass
 
 

@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 
 from ..domain.locations.use_cases.crud_locations import MethodsForLocation
 
+from src.core.exceptions.domain_exceptions import LocationNotFoundByNameException, LocationIsNotUniqueException
+
 from ..infrastructure.sqlite.database import get_db
-from ..infrastructure.sqlite.models.location_models import LocationModel
 from ..schems.locations import LocationOut, LocationUpdateAndCreate
 
 router = APIRouter(prefix='/locations', tags=['Местоположения'])
@@ -23,7 +24,10 @@ def list_locations(skip: int = 0, limit: int = 20,
             summary='Получить местоположение:')
 def get_location(name: str, DataBase: Session = Depends(get_db)) -> LocationOut:
     use_case = MethodsForLocation()
-    return use_case.get_detail(DataBase, name)
+    try:
+        return use_case.get_detail(DataBase, name)
+    except LocationNotFoundByNameException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())
 
 
 @router.post('/', response_model=LocationOut,
@@ -32,7 +36,10 @@ def get_location(name: str, DataBase: Session = Depends(get_db)) -> LocationOut:
 def create_location(payload: LocationUpdateAndCreate,
                     DataBase: Session = Depends(get_db)) -> LocationOut:
     use_case = MethodsForLocation()
-    return use_case.create(DataBase, payload)
+    try:
+        return use_case.create(DataBase, payload)
+    except LocationIsNotUniqueException as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=e.get_detail())
 
 
 @router.put('/{name}', response_model=LocationOut,
@@ -40,11 +47,19 @@ def create_location(payload: LocationUpdateAndCreate,
 def update_location(name: str, payload: LocationUpdateAndCreate,
                     DataBase: Session = Depends(get_db)) -> LocationOut:
     use_case = MethodsForLocation()
-    return use_case.update(DataBase, name, payload)
+    try:
+        return use_case.update(DataBase, name, payload)
+    except LocationNotFoundByNameException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())
+    except LocationIsNotUniqueException as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=e.get_detail())
 
 
 @router.delete('/{name}', status_code=status.HTTP_204_NO_CONTENT,
                summary='Удалить местоположение:')
 def delete_location(name: str, DataBase: Session = Depends(get_db)):
     use_case = MethodsForLocation()
-    use_case.destroy(DataBase, name)
+    try:
+        use_case.destroy(DataBase, name)
+    except LocationNotFoundByNameException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())

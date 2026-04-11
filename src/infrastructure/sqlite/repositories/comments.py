@@ -1,19 +1,26 @@
 from typing import List
 
-from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from ..models.comment_models import CommentModel
 from ..models.post_models import PostModel
 from ..models.user_models import UserModel
 from ....schems.comments import CommentCreate, CommentUpdate
 
+from src.core.exceptions.database_exceptions import (UserNotFoundException,
+                                                     PostNotFoundException,
+                                                     CommentNotFoundException)
 
 class CommentRepository:
     def __init__(self):
         pass
 
     def get(self, DataBase: Session, post_id: int | None, skip: int, limit: int) -> List[CommentModel]:
+        post = (DataBase.query(PostModel)
+                .filter(PostModel.id == post_id)
+                .first())
+        if not post:
+            raise PostNotFoundException()
         query = DataBase.query(CommentModel)
         if post_id is not None:
             query = query.filter(CommentModel.post_id == post_id)
@@ -24,7 +31,7 @@ class CommentRepository:
             CommentModel.id == comment_id
         ).first()
         if not comment:
-            raise HTTPException(status_code=404, detail='Комментарий не существует.')
+            raise CommentNotFoundException()
         return comment
 
     def create(self, DataBase: Session, payload: CommentCreate) -> CommentModel:
@@ -32,14 +39,17 @@ class CommentRepository:
             PostModel.id == payload.post_id
         ).first()
         if not post:
-            raise HTTPException(status_code=404, detail='Публикация не существует.')
+            raise PostNotFoundException()
         author = DataBase.query(UserModel).filter(
-            UserModel.id == payload.author_id
+            UserModel.nickname == payload.author_nickname
         ).first()
         if not author:
-            raise HTTPException(status_code=404, detail='Автор не существует.')
+            raise UserNotFoundException()
 
-        comment = CommentModel(**payload.model_dump())
+        dict_ = (payload.model_dump(exclude={'author_nickname'})
+                 | {'author_id':author.id})
+
+        comment = CommentModel(**dict_)
         DataBase.add(comment)
         DataBase.commit()
         DataBase.refresh(comment)
@@ -50,7 +60,7 @@ class CommentRepository:
             CommentModel.id == comment_id
         ).first()
         if not comment:
-            raise HTTPException(status_code=404, detail='Комментарий не существует.')
+            raise CommentNotFoundException()
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(comment, field, value)
         DataBase.commit()
@@ -62,6 +72,6 @@ class CommentRepository:
             CommentModel.id == comment_id
         ).first()
         if not comment:
-            raise HTTPException(status_code=404, detail='Комментарий не существует.')
+            raise CommentNotFoundException()
         DataBase.delete(comment)
         DataBase.commit()

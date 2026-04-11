@@ -1,11 +1,12 @@
 from typing import List
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from ..domain.categories.use_cases.crud_categories import MethodsForCategory
 
+from src.core.exceptions.domain_exceptions import CategoryNotFoundBySlugException, CategoryIsNotUniqueException
+
 from ..infrastructure.sqlite.database import get_db
-from ..infrastructure.sqlite.models.category_models import CategoryModel
 from ..schems.categories import CategoryOut, CategoryUpdateAndCreate
 
 router = APIRouter(prefix='/categories', tags=['Категории постов'])
@@ -23,7 +24,10 @@ def list_categories(skip: int = 0, limit: int = 10,
             summary='Получить категорию:')
 def get_category(category_slug: str, DataBase: Session = Depends(get_db)) -> CategoryOut:
     use_case = MethodsForCategory()
-    return use_case.get_detail(DataBase, category_slug)
+    try:
+        return use_case.get_detail(DataBase, category_slug)
+    except CategoryNotFoundBySlugException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())
 
 
 @router.post('/', response_model=CategoryOut,
@@ -32,7 +36,10 @@ def get_category(category_slug: str, DataBase: Session = Depends(get_db)) -> Cat
 def create_category(payload: CategoryUpdateAndCreate,
                     DataBase: Session = Depends(get_db)) -> CategoryOut:
     use_case = MethodsForCategory()
-    return use_case.create(DataBase, payload)
+    try:
+        return use_case.create(DataBase, payload)
+    except CategoryIsNotUniqueException as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=e.get_detail())
 
 
 @router.put('/{category_slug}', response_model=CategoryOut,
@@ -40,11 +47,19 @@ def create_category(payload: CategoryUpdateAndCreate,
 def update_category(category_slug: str, payload: CategoryUpdateAndCreate,
                     DataBase: Session = Depends(get_db)) -> CategoryOut:
     use_case = MethodsForCategory()
-    return use_case.update(DataBase, category_slug, payload)
+    try:
+        return use_case.update(DataBase, category_slug, payload)
+    except CategoryNotFoundBySlugException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())
+    except CategoryIsNotUniqueException as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=e.get_detail())
 
 
 @router.delete('/{category_slug}', status_code=status.HTTP_204_NO_CONTENT,
                summary='Удалить категорию:')
 def delete_category(category_slug: str, DataBase: Session = Depends(get_db)):
     use_case = MethodsForCategory()
-    use_case.destroy(DataBase, category_slug)
+    try:
+        use_case.destroy(DataBase, category_slug)
+    except CategoryNotFoundBySlugException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())

@@ -1,11 +1,12 @@
 from typing import List
 
-from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..models.category_models import CategoryModel
 from ....schems.categories import CategoryUpdateAndCreate
 
+from src.core.exceptions.database_exceptions import CategoryNotFoundException, CategiryAlreadyExistsException
 
 class CategoryRepository:
     def __init__(self):
@@ -19,18 +20,16 @@ class CategoryRepository:
             CategoryModel.slug == category_slug
         ).first()
         if not category:
-            raise HTTPException(status_code=404, detail='Категория не существует.')
+            raise CategoryNotFoundException()
         return category
 
     def create(self, DataBase: Session, payload: CategoryUpdateAndCreate) -> CategoryModel:
-        if DataBase.query(CategoryModel).filter(
-            CategoryModel.slug == payload.slug
-        ).first():
-            raise HTTPException(status_code=400,
-                                detail='Категория с таким идентификатором уже существует.')
         category = CategoryModel(**payload.model_dump())
-        DataBase.add(category)
-        DataBase.commit()
+        try:
+            DataBase.add(category)
+            DataBase.commit()
+        except IntegrityError:
+            raise CategiryAlreadyExistsException()
         DataBase.refresh(category)
         return category
 
@@ -39,10 +38,13 @@ class CategoryRepository:
             CategoryModel.slug == category_slug
         ).first()
         if not category:
-            raise HTTPException(status_code=404, detail='Категория не существует.')
+            raise CategoryNotFoundException()
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(category, field, value)
-        DataBase.commit()
+        try:
+            DataBase.commit()
+        except IntegrityError:
+            raise CategiryAlreadyExistsException()
         DataBase.refresh(category)
         return category
 
@@ -51,6 +53,6 @@ class CategoryRepository:
             CategoryModel.slug == category_slug
         ).first()
         if not category:
-            raise HTTPException(status_code=404, detail='Категория не существует.')
+            raise CategoryNotFoundException()
         DataBase.delete(category)
         DataBase.commit()
