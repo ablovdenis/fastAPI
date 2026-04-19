@@ -1,5 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
-from fastapi import HTTPException, status
+from pydantic import BaseModel, Field, field_validator, ValueError
 from datetime import datetime as dati
 from typing import List
 
@@ -12,9 +11,8 @@ from .comments import CommentOut
 def valid_title(title: str):
     len_title = len(title)
     if len_title < 5 or len_title > 40:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail='Заголовок поста должен быть длиннее 4 символов и короче 41 символа.'
+        raise ValueError(
+            'Заголовок поста должен быть длиннее 4 символов и короче 41 символа.'
         )
     return title
 

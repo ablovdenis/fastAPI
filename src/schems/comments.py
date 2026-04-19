@@ -1,5 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
-from fastapi import HTTPException, status
+from pydantic import BaseModel, Field, field_validator, ValueError
 from datetime import datetime as dati
 
 
@@ -11,9 +10,8 @@ class CommentUpdate(BaseModel):
     def check_text(text: str):
         len_text = len(text)
         if len_text == 0 or len_text > 500:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail='Текст комментария должен содержать хотя б 1 символ и быть короче 501 символа.'
+            raise ValueError(
+                'Текст комментария должен содержать хотя б 1 символ и быть короче 501 символа.'
             )
 
 

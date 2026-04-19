@@ -1,29 +1,24 @@
-from pydantic import BaseModel, Field, EmailStr, field_validator
-from fastapi import HTTPException, status
+from pydantic import BaseModel, Field, EmailStr, field_validator, ValueError
 from datetime import datetime as dati
 import re
 
 def valid_first_or_last_name(name: str, meaning: str) -> str:
     len_name = len(name)
     if len_name < 2 or len_name >= 31:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f'{meaning} должно состоять хотя бы из 2 букв и быть не длинее 30 символов.'
+        raise ValueError(
+            f'{meaning} должно состоять хотя бы из 2 букв и быть не длинее 30 символов.'
         )
     if not re.match(r'^[а-яёА-ЯЁa-zA-Z]+$', name):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f'{meaning} должно состоять только из букв латинского алфавита или кириллицы.'
+        raise ValueError(
+            f'{meaning} должно состоять только из букв латинского алфавита или кириллицы.'
         )
     if not re.match(r'[A-ZА-ЯЁ]', name[0]):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f'{meaning} должно начинаться с заглавной буквы.'
+        raise ValueError(
+            f'{meaning} должно начинаться с заглавной буквы.'
         )
     if not re.match(r'^.[а-яёa-z]+$', name):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f'{meaning} может только начинаться с заглавной буквы.'
+        raise ValueError(
+            f'{meaning} может только начинаться с заглавной буквы.'
         )
     return name
 
@@ -31,9 +26,8 @@ def valid_first_or_last_name(name: str, meaning: str) -> str:
 def valid_nickname(nickname: str):
     len_nickname = len(nickname)
     if len_nickname < 3 or len_nickname > 30:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail='Никнейм должен быть длиннее 2 символов и короче 21 символа.'
+        raise ValueError(
+            'Никнейм должен быть длиннее 2 символов и короче 21 символа.'
         )
     return nickname
 
@@ -69,9 +63,8 @@ class UserCreate(UserUpdate):
     def check_password(password: str):
         len_password = len(password)
         if password < 10 or len_password > 100:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail='Пароль должен быть длиннее 9 символов и короче 101 символа.'
+            raise ValueError(
+                'Пароль должен быть длиннее 9 символов и короче 101 символа.'
             )
         return password
 
