@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr, field_validator, ValueError
+from pydantic import BaseModel, Field, EmailStr, field_validator
 from datetime import datetime as dati
 import re
 
@@ -50,8 +50,8 @@ class UserUpdate(BaseModel):
 
 
 class UserCreate(UserUpdate):
-    nickname: str = Field(min_length=3, max_length=20)
-    password: str = Field(min_length=9, max_length=30)
+    nickname: str = Field()
+    password: str = Field()
 
     @field_validator("nickname", mode="after")
     @staticmethod
@@ -62,7 +62,7 @@ class UserCreate(UserUpdate):
     @staticmethod
     def check_password(password: str):
         len_password = len(password)
-        if password < 10 or len_password > 100:
+        if len_password < 10 or len_password > 100:
             raise ValueError(
                 'Пароль должен быть длиннее 9 символов и короче 101 символа.'
             )
