@@ -14,7 +14,7 @@ class MethodsForLocation:
         self._repo = LocationRepository()
 
     def get(self, DataBase: Session, skip: int, limit: int) -> List[LocationOut]:
-        return [LocationOut.model_validate(user) for user in self._repo.get(DataBase, skip, limit)]
+        return [LocationOut.model_validate(location) for location in self._repo.get(DataBase, skip, limit)]
 
     def get_detail(self, DataBase: Session, name: str) -> LocationOut:
         try:

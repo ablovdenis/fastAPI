@@ -2,6 +2,9 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from src.schems.users import UserOut
+from src.services.auth import get_current_user
+
 from ..domain.locations.use_cases.crud_locations import MethodsForLocation
 
 from src.core.exceptions.domain_exceptions import LocationNotFoundByNameException, LocationIsNotUniqueException
@@ -34,7 +37,8 @@ def get_location(name: str, DataBase: Session = Depends(get_db)) -> LocationOut:
              status_code=status.HTTP_201_CREATED,
              summary='Создать местоположение:')
 def create_location(payload: LocationUpdateAndCreate,
-                    DataBase: Session = Depends(get_db)) -> LocationOut:
+                    DataBase: Session = Depends(get_db),
+                    _: UserOut = Depends(get_current_user)) -> LocationOut:
     use_case = MethodsForLocation()
     try:
         return use_case.create(DataBase, payload)
@@ -45,7 +49,8 @@ def create_location(payload: LocationUpdateAndCreate,
 @router.put('/{name}', response_model=LocationOut,
             summary='Сменить местоположение:')
 def update_location(name: str, payload: LocationUpdateAndCreate,
-                    DataBase: Session = Depends(get_db)) -> LocationOut:
+                    DataBase: Session = Depends(get_db),
+                    _: UserOut = Depends(get_current_user)) -> LocationOut:
     use_case = MethodsForLocation()
     try:
         return use_case.update(DataBase, name, payload)
@@ -57,7 +62,8 @@ def update_location(name: str, payload: LocationUpdateAndCreate,
 
 @router.delete('/{name}', status_code=status.HTTP_204_NO_CONTENT,
                summary='Удалить местоположение:')
-def delete_location(name: str, DataBase: Session = Depends(get_db)):
+def delete_location(name: str, DataBase: Session = Depends(get_db),
+                    _: UserOut = Depends(get_current_user)):
     use_case = MethodsForLocation()
     try:
         use_case.destroy(DataBase, name)

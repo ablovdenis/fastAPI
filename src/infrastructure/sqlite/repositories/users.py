@@ -1,7 +1,6 @@
 from sqlalchemy.exc import IntegrityError
 from typing import List
 
-from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
 from ..models.user_models import UserModel

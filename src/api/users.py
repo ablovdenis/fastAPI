@@ -2,6 +2,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from src.services.auth import get_current_user
+
 from ..domain.users.use_cases.crud_users import MethodsForUser
 
 from src.core.exceptions.domain_exceptions import (UserNicknameIsNotUniqueException,
@@ -14,19 +16,26 @@ from ..schems.users import UserCreate, UserOut, UserUpdate
 router = APIRouter(prefix='/users', tags=['Пользователи'])
 
 
-@router.get('/', response_model=List[UserOut], summary='Пользователи:')
-def list_users(skip: int = 0, limit: int = 20, DataBase: Session = Depends(get_db)) -> List[UserOut]:
+@router.get('/all', response_model=List[UserOut], summary='Пользователи:')
+def list_users(skip: int = 0, limit: int = 20, DataBase: Session = Depends(get_db),
+               _: UserOut = Depends(get_current_user)) -> List[UserOut]:
     use_case = MethodsForUser()
     return use_case.get(DataBase, skip, limit)
 
 
-@router.get('/{nickname}', response_model=UserOut, summary='Получить пользователя:')
-def get_user(nickname: str, DataBase: Session = Depends(get_db)) -> UserOut:
+@router.get('/{nickname}', response_model=UserOut, summary='Получить любого пользователя по никнейму:')
+def get_user(nickname: str, DataBase: Session = Depends(get_db),
+             _: UserOut = Depends(get_current_user)) -> UserOut:
     use_case = MethodsForUser()
     try:
         return use_case.get_detail(DataBase, nickname)
     except UserNotFoundByNicknameException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())
+
+
+@router.get('/', response_model=UserOut, summary='Получить данные о себе:')
+def get_user(user: UserOut = Depends(get_current_user)) -> UserOut:
+        return user
 
 
 @router.post('/', response_model=UserOut, status_code=status.HTTP_201_CREATED,
@@ -41,23 +50,23 @@ def create_user(payload: UserCreate, DataBase: Session = Depends(get_db)) -> Use
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=e.get_detail())
 
 
-@router.put('/{nickname}', response_model=UserOut, summary='Редактировать профиль:')
-def update_user(nickname: str, payload: UserUpdate,
-                DataBase: Session = Depends(get_db)) -> UserOut:
+@router.put('/', response_model=UserOut, summary='Редактировать профиль:')
+def update_user(payload: UserUpdate, DataBase: Session = Depends(get_db),
+                user: UserOut = Depends(get_current_user)) -> UserOut:
     use_case = MethodsForUser()
     try:
-        return use_case.update(DataBase, nickname, payload)
+        return use_case.update(DataBase, user.nickname, payload)
     except UserNotFoundByNicknameException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())
     except UserEmailIsNotUniqueException as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=e.get_detail())
 
 
-@router.delete('/{nickname}', status_code=status.HTTP_204_NO_CONTENT,
+@router.delete('/', status_code=status.HTTP_204_NO_CONTENT,
                summary='Удалить аккаунт:')
-def delete_user(nickname: str, DataBase: Session = Depends(get_db)):
+def delete_user(DataBase: Session = Depends(get_db), user: UserOut = Depends(get_current_user)):
     use_case = MethodsForUser()
     try:
-        use_case.destroy(DataBase, nickname)
+        use_case.destroy(DataBase, user.nickname)
     except UserNotFoundByNicknameException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())

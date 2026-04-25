@@ -2,12 +2,15 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from src.schems.users import UserOut
+from src.services.auth import get_current_user
+
 from ..domain.comments.use_cases.crud_comments import MethodsForComment
 
 from ..infrastructure.sqlite.database import get_db
 from ..schems.comments import CommentCreate, CommentOut, CommentUpdate
 
-from src.core.exceptions.domain_exceptions import (CommentNotFoundByIDException,
+from src.core.exceptions.domain_exceptions import (CommentDontChangeException, CommentDontDestroyException, CommentNotFoundByIDException,
                                                    CommentDontCreateException,
                                                    PostNotFoundByIDException)
 
@@ -42,11 +45,11 @@ def get_comment(comment_id: int, DataBase: Session = Depends(get_db)) -> Comment
 @router.post('/', response_model=CommentOut,
              status_code=status.HTTP_201_CREATED,
              summary='Создать комментарий:')
-def create_comment(payload: CommentCreate,
-                   DataBase: Session = Depends(get_db)) -> CommentOut:
+def create_comment(payload: CommentCreate, DataBase: Session = Depends(get_db),
+                   user: UserOut = Depends(get_current_user)) -> CommentOut:
     use_case = MethodsForComment()
     try:
-        return use_case.create(DataBase, payload)
+        return use_case.create(DataBase, payload, user.id)
     except CommentDontCreateException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())
 
@@ -54,19 +57,24 @@ def create_comment(payload: CommentCreate,
 @router.put('/{comment_id}', response_model=CommentOut,
             summary='Изменить комментарий:')
 def update_comment(comment_id: int, payload: CommentUpdate,
-                   DataBase: Session = Depends(get_db)) -> CommentOut:
+                   DataBase: Session = Depends(get_db),
+                   user: UserOut = Depends(get_current_user)) -> CommentOut:
     use_case = MethodsForComment()
     try:
-        return use_case.update(DataBase, comment_id, payload)
+        return use_case.update(DataBase, comment_id, payload, user.id)
     except CommentNotFoundByIDException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())
-
+    except CommentDontChangeException as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.get_detail())
 
 @router.delete('/{comment_id}', status_code=status.HTTP_204_NO_CONTENT,
                summary='Удалить комментарий:')
-def delete_comment(comment_id: int, DataBase: Session = Depends(get_db)):
+def delete_comment(comment_id: int, DataBase: Session = Depends(get_db),
+                   user: UserOut = Depends(get_current_user)):
     use_case = MethodsForComment()
     try:
-        use_case.destroy(DataBase, comment_id)
+        use_case.destroy(DataBase, comment_id, user.id)
     except CommentNotFoundByIDException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.get_detail())
+    except CommentDontDestroyException as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.get_detail())

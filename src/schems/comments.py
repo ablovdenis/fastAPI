@@ -11,13 +11,13 @@ class CommentUpdate(BaseModel):
         len_text = len(text)
         if len_text == 0 or len_text > 500:
             raise ValueError(
-                'Текст комментария должен содержать хотя б 1 символ и быть короче 501 символа.'
+                'Текст комментария должен содержать хотя бы 1 символ и быть короче 501 символа.'
             )
+        return text
 
 
 class CommentCreate(CommentUpdate):
     post_id: int
-    author_nickname: str
 
 class CommentOut(CommentUpdate):
     post_id: int

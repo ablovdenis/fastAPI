@@ -37,3 +37,6 @@ class PostNotFoundException(BaseDatabaseException):
 
 class CommentNotFoundException(BaseDatabaseException):
     pass
+
+class CredentialException(BaseDatabaseException):
+    pass

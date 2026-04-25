@@ -2,6 +2,9 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from src.schems.users import UserOut
+from src.services.auth import get_current_user
+
 from ..domain.categories.use_cases.crud_categories import MethodsForCategory
 
 from src.core.exceptions.domain_exceptions import CategoryNotFoundBySlugException, CategoryIsNotUniqueException
@@ -34,7 +37,8 @@ def get_category(category_slug: str, DataBase: Session = Depends(get_db)) -> Cat
              status_code=status.HTTP_201_CREATED,
              summary='Создать категорию:')
 def create_category(payload: CategoryUpdateAndCreate,
-                    DataBase: Session = Depends(get_db)) -> CategoryOut:
+                    DataBase: Session = Depends(get_db),
+                    _: UserOut = Depends(get_current_user)) -> CategoryOut:
     use_case = MethodsForCategory()
     try:
         return use_case.create(DataBase, payload)
@@ -45,7 +49,8 @@ def create_category(payload: CategoryUpdateAndCreate,
 @router.put('/{category_slug}', response_model=CategoryOut,
             summary='Изменить категорию:')
 def update_category(category_slug: str, payload: CategoryUpdateAndCreate,
-                    DataBase: Session = Depends(get_db)) -> CategoryOut:
+                    DataBase: Session = Depends(get_db),
+                    _: UserOut = Depends(get_current_user)) -> CategoryOut:
     use_case = MethodsForCategory()
     try:
         return use_case.update(DataBase, category_slug, payload)
@@ -57,7 +62,8 @@ def update_category(category_slug: str, payload: CategoryUpdateAndCreate,
 
 @router.delete('/{category_slug}', status_code=status.HTTP_204_NO_CONTENT,
                summary='Удалить категорию:')
-def delete_category(category_slug: str, DataBase: Session = Depends(get_db)):
+def delete_category(category_slug: str, DataBase: Session = Depends(get_db),
+                    _: UserOut = Depends(get_current_user)):
     use_case = MethodsForCategory()
     try:
         use_case.destroy(DataBase, category_slug)

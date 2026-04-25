@@ -17,7 +17,7 @@ def valid_title(title: str):
     return title
 
 
-class PostUpdate(BaseModel):
+class PostCreateAndUpdate(BaseModel):
     title: str = Field(default=None)
     text: str = Field(default=None)
     pub_date: dati = Field(default=None)
@@ -30,10 +30,6 @@ class PostUpdate(BaseModel):
     @staticmethod
     def check_title(title: str):
          return valid_title(title)
-
-
-class PostCreate(PostUpdate):
-    author_nickname: str = Field(default=None)
 
 
 class PostOut(BaseModel):

@@ -7,7 +7,7 @@ from ..models.post_models import PostModel
 from ..models.user_models import UserModel
 from ....schems.comments import CommentCreate, CommentUpdate
 
-from src.core.exceptions.database_exceptions import (UserNotFoundException,
+from src.core.exceptions.database_exceptions import (CredentialException, UserNotFoundException,
                                                      PostNotFoundException,
                                                      CommentNotFoundException)
 
@@ -34,20 +34,16 @@ class CommentRepository:
             raise CommentNotFoundException()
         return comment
 
-    def create(self, DataBase: Session, payload: CommentCreate) -> CommentModel:
+    def create(self, DataBase: Session, payload: CommentCreate, author_id: int) -> CommentModel:
         post = DataBase.query(PostModel).filter(
             PostModel.id == payload.post_id
         ).first()
         if not post:
             raise PostNotFoundException()
-        author = DataBase.query(UserModel).filter(
-            UserModel.nickname == payload.author_nickname
-        ).first()
-        if not author:
-            raise UserNotFoundException()
 
-        dict_ = (payload.model_dump(exclude={'author_nickname'})
-                 | {'author_id':author.id})
+        dict_ = (payload.model_dump()
+                 | {'author_id':author_id,
+                    })
 
         comment = CommentModel(**dict_)
         DataBase.add(comment)
@@ -55,23 +51,32 @@ class CommentRepository:
         DataBase.refresh(comment)
         return comment
 
-    def update(self, DataBase: Session, comment_id: int, payload: CommentUpdate) -> CommentModel:
+
+    def update(self, DataBase: Session, comment_id: int, payload: CommentUpdate, author_id: str) -> CommentModel:
         comment = DataBase.query(CommentModel).filter(
             CommentModel.id == comment_id
         ).first()
         if not comment:
             raise CommentNotFoundException()
+        
+        if comment.author_id != author_id:
+            raise CredentialException()
+
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(comment, field, value)
         DataBase.commit()
         DataBase.refresh(comment)
         return comment
 
-    def destroy(self, DataBase: Session, comment_id: int):
+    def destroy(self, DataBase: Session, comment_id: int, author_id: str):
         comment = DataBase.query(CommentModel).filter(
             CommentModel.id == comment_id
         ).first()
         if not comment:
             raise CommentNotFoundException()
+        
+        if comment.author_id != author_id:
+            raise CredentialException()
+
         DataBase.delete(comment)
         DataBase.commit()

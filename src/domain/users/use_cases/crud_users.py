@@ -2,6 +2,7 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
+from src.resources.auth import get_password_hash
 from src.core.exceptions.domain_exceptions import (UserNicknameIsNotUniqueException,
                                                    UserNotFoundByNicknameException,
                                                    UserEmailIsNotUniqueException)
@@ -28,6 +29,7 @@ class MethodsForUser:
         return UserOut.model_validate(user_model)
 
     def create(self, DataBase: Session, payload: UserCreate) -> UserOut:
+        payload.password = get_password_hash(payload.password)
         try:
             user_model = self._repo.create(DataBase, payload)
         except UserByNicknameAlreadyExistsException:

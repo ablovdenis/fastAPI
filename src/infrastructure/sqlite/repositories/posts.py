@@ -6,9 +6,9 @@ from ..models.category_models import CategoryModel
 from ..models.location_models import LocationModel
 from ..models.post_models import PostModel
 from ..models.user_models import UserModel
-from ....schems.posts import PostCreate, PostUpdate
+from ....schems.posts import PostCreateAndUpdate
 
-from src.core.exceptions.database_exceptions import (UserNotFoundException,
+from src.core.exceptions.database_exceptions import (CredentialException, UserNotFoundException,
                                                      CategoryNotFoundException,
                                                      LocationNotFoundException, 
                                                      PostNotFoundException)
@@ -42,9 +42,10 @@ class PostRepository:
             raise PostNotFoundException()
         return post
 
-    def create(self, DataBase: Session, payload: PostCreate) -> PostModel:
+    def create(self, DataBase: Session, payload: PostCreateAndUpdate,
+               nickname: str) -> PostModel:
         author = DataBase.query(UserModel).filter(
-            UserModel.nickname == payload.author_nickname
+            UserModel.nickname == nickname
         ).first()
         if not author:
             raise UserNotFoundException()
@@ -75,11 +76,15 @@ class PostRepository:
         DataBase.refresh(post)
         return post
 
-    def update(self, DataBase: Session, post_id: int, payload: PostUpdate) -> PostModel:
+    def update(self, DataBase: Session, payload: PostCreateAndUpdate,
+               post_id: int, author_id: int) -> PostModel:
         post = DataBase.query(PostModel).filter(PostModel.id == post_id).first()
         if not post:
             raise PostNotFoundException()
         
+        if post.author_id != author_id:
+            raise CredentialException()
+
         category = DataBase.query(CategoryModel).filter(
             CategoryModel.slug == payload.category_slug
         ).first()
@@ -106,9 +111,11 @@ class PostRepository:
         DataBase.refresh(post)
         return post
 
-    def destroy(self, DataBase: Session, post_id: int):
+    def destroy(self, DataBase: Session, post_id: int, author_id: int):
         post = DataBase.query(PostModel).filter(PostModel.id == post_id).first()
         if not post:
             raise PostNotFoundException()
+        if post.author_id != author_id:
+            raise CredentialException()
         DataBase.delete(post)
         DataBase.commit()

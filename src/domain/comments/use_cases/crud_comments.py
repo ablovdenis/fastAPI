@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 from ....infrastructure.sqlite.repositories.comments import CommentRepository
 from ....schems.comments import CommentCreate, CommentOut, CommentUpdate
 
-from src.core.exceptions.database_exceptions import (UserNotFoundException,
+from src.core.exceptions.database_exceptions import (CredentialException, UserNotFoundException,
                                                      PostNotFoundException,
                                                      CommentNotFoundException)
-from src.core.exceptions.domain_exceptions import (CommentNotFoundByIDException,
+from src.core.exceptions.domain_exceptions import (CommentDontChangeException, CommentDontDestroyException, CommentNotFoundByIDException,
                                                    CommentDontCreateException,
                                                    PostNotFoundByIDException)
 
@@ -30,24 +30,29 @@ class MethodsForComment:
             raise CommentNotFoundByIDException(comment_id)
         return CommentOut.model_validate(comment_model)
 
-    def create(self, DataBase: Session, payload: CommentCreate) -> CommentOut:
+    def create(self, DataBase: Session, payload: CommentCreate, author_id: int) -> CommentOut:
         try:
-            comment_model = self._repo.create(DataBase, payload)
+            comment_model = self._repo.create(DataBase, payload, author_id)
         except PostNotFoundException:
             raise CommentDontCreateException('пост не найден')
         except UserNotFoundException:
             raise CommentDontCreateException('автор не найден')
         return CommentOut.model_validate(comment_model)
 
-    def update(self, DataBase: Session, comment_id: int, payload: CommentUpdate) -> CommentOut:
+    def update(self, DataBase: Session, comment_id: int, payload: CommentUpdate,
+               author_id: str) -> CommentOut:
         try:
-            comment_model = self._repo.update(DataBase, comment_id, payload)
+            comment_model = self._repo.update(DataBase, comment_id, payload, author_id)
         except CommentNotFoundException:
             raise CommentNotFoundByIDException(comment_id)
+        except CredentialException:
+            raise CommentDontChangeException('данный пост не принадлежит этому пользователю')
         return CommentOut.model_validate(comment_model)
     
-    def destroy(self, DataBase: Session, comment_id: int):
+    def destroy(self, DataBase: Session, comment_id: int, author_id: int):
         try:
-            self._repo.destroy(DataBase, comment_id)
+            self._repo.destroy(DataBase, comment_id, author_id)
         except CommentNotFoundException:
             raise CommentNotFoundByIDException(comment_id)
+        except CredentialException:
+            raise CommentDontDestroyException('данный пост не принадлежит этому пользователю')

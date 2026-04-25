@@ -14,7 +14,7 @@ class MethodsForCategory:
         self._repo = CategoryRepository()
 
     def get(self, DataBase: Session, skip: int, limit: int) -> List[CategoryOut]:
-        return [CategoryOut.model_validate(user) for user in self._repo.get(DataBase, skip, limit)]
+        return [CategoryOut.model_validate(category) for category in self._repo.get(DataBase, skip, limit)]
 
     def get_detail(self, DataBase: Session, category_slug: str) -> CategoryOut:
         try:
