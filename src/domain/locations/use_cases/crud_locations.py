@@ -2,7 +2,7 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
-from ....infrastructure.sqlite.repositories.locations import LocationRepository
+from ....infrastructure.postgre.repositories.locations import LocationRepository
 from ....schems.locations import LocationOut, LocationUpdateAndCreate
 
 from src.core.exceptions.domain_exceptions import LocationNotFoundByNameException, LocationIsNotUniqueException

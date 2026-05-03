@@ -1,8 +1,9 @@
+import os
 from typing import List
 
 from sqlalchemy.orm import Session
 
-from ....infrastructure.sqlite.repositories.posts import PostRepository
+from ....infrastructure.postgre.repositories.posts import PostRepository
 from ....schems.posts import PostCreateAndUpdate, PostDetail, PostOut
 
 from src.core.exceptions.database_exceptions import (CredentialException, UserNotFoundException,
@@ -41,9 +42,9 @@ class MethodsForPost:
         return PostOut.model_validate(post_model)
 
     def update(self, DataBase: Session, payload: PostCreateAndUpdate,
-               post_id: int, author_id: int) -> PostOut:
+               post_id: int, nickname: int) -> PostOut:
         try:
-            post_model = self._repo.update(DataBase, payload, post_id, author_id)
+            post_model = self._repo.update_without_image(DataBase, payload, post_id, nickname)
         except PostNotFoundException:
             raise PostNotFoundByIDException(post_id)
         except CategoryNotFoundException:
@@ -54,9 +55,13 @@ class MethodsForPost:
             raise PostDontChangeException('данный пост не принадлежит этому пользователю')
         return PostOut.model_validate(post_model)
     
-    def destroy(self, DataBase: Session, post_id: int, author_id: int):
+    def destroy(self, DataBase: Session, post_id: int, nickname: str, image_folder="images"):
         try:
-            self._repo.destroy(DataBase, post_id, author_id)
+            image = self._repo.get_detail(DataBase, post_id).image
+            self._repo.destroy(DataBase, post_id, nickname)
+            if image:
+                image_path = f"{image_folder}/{image}"
+                os.remove(image_path)
         except PostNotFoundException:
             raise PostNotFoundByIDException(post_id)
         except CredentialException:

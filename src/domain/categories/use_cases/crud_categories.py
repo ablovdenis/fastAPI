@@ -2,11 +2,11 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
-from ....infrastructure.sqlite.repositories.categories import CategoryRepository
+from ....infrastructure.postgre.repositories.categories import CategoryRepository
 from ....schems.categories import CategoryOut, CategoryUpdateAndCreate
 
 from src.core.exceptions.domain_exceptions import CategoryNotFoundBySlugException, CategoryIsNotUniqueException
-from src.core.exceptions.database_exceptions import CategoryNotFoundException, CategiryAlreadyExistsException
+from src.core.exceptions.database_exceptions import CategoryNotFoundException, CategoryAlreadyExistsException
 
 
 class MethodsForCategory:
@@ -26,7 +26,7 @@ class MethodsForCategory:
     def create(self, DataBase: Session, payload: CategoryUpdateAndCreate) -> CategoryOut:
         try:
             category_model = self._repo.create(DataBase, payload)
-        except CategiryAlreadyExistsException:
+        except CategoryAlreadyExistsException:
             raise CategoryIsNotUniqueException(payload.slug)
         return CategoryOut.model_validate(category_model)
 
@@ -35,7 +35,7 @@ class MethodsForCategory:
             category_model = self._repo.update(DataBase, category_slug, payload)
         except CategoryNotFoundException:
             raise CategoryNotFoundBySlugException(category_slug)
-        except CategiryAlreadyExistsException:
+        except CategoryAlreadyExistsException:
             raise CategoryIsNotUniqueException(payload.slug)
         return CategoryOut.model_validate(category_model)
     

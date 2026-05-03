@@ -8,8 +8,8 @@ from src.core.config import settings
 
 from src.schems.users import UserOut
 
-from src.infrastructure.sqlite.database import get_db
-from src.infrastructure.sqlite.repositories.users import UserRepository
+from src.infrastructure.postgre.database import get_db
+from src.infrastructure.postgre.repositories.users import UserRepository
 
 from src.resources.auth import oauth2_scheme
 

@@ -10,7 +10,7 @@ from src.core.exceptions.database_exceptions import (UserNotFoundException,
                                                      UserByNicknameAlreadyExistsException,
                                                      UserByEmailAlreadyExistsException)
 
-from ....infrastructure.sqlite.repositories.users import UserRepository
+from ....infrastructure.postgre.repositories.users import UserRepository
 from ....schems.users import UserCreate, UserOut, UserUpdate
 
 

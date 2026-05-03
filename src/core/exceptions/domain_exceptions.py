@@ -144,3 +144,25 @@ class CommentDontDestroyException(BaseDomainException):
         self._exception_text_template = self._exception_text_template.format(cause=cause)
 
         super().__init__(detail=self._exception_text_template)
+
+class IsNotAnImageExtensionException(BaseDomainException):
+    _exception_text_template = "Расширение загруженного файла {exception} не является допустимым для изображения."
+
+    def __init__(self, exception: str) -> None:
+        self._exception_text_template = self._exception_text_template.format(exception=exception)
+
+        super().__init__(detail=self._exception_text_template)
+
+class PostHasNoImageException(BaseDomainException):
+    _exception_text = "Этот пост не содержит изображения."
+
+    def __init__(self) -> None:
+        super().__init__(detail=self._exception_text)
+
+class ImageDontDestroyException(BaseDomainException):
+    _exception_text_template = "Изображение не было удалено, так как {cause}."
+
+    def __init__(self, cause: str) -> None:
+        self._exception_text_template = self._exception_text_template.format(cause=cause)
+
+        super().__init__(detail=self._exception_text_template)

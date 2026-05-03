@@ -2,7 +2,7 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
-from ....infrastructure.sqlite.repositories.comments import CommentRepository
+from ....infrastructure.postgre.repositories.comments import CommentRepository
 from ....schems.comments import CommentCreate, CommentOut, CommentUpdate
 
 from src.core.exceptions.database_exceptions import (CredentialException, UserNotFoundException,

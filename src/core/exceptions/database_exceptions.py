@@ -19,7 +19,7 @@ class CategoryNotFoundException(BaseDatabaseException):
     pass
 
 
-class CategiryAlreadyExistsException(BaseDatabaseException):
+class CategoryAlreadyExistsException(BaseDatabaseException):
     pass
 
 
@@ -37,6 +37,7 @@ class PostNotFoundException(BaseDatabaseException):
 
 class CommentNotFoundException(BaseDatabaseException):
     pass
+
 
 class CredentialException(BaseDatabaseException):
     pass

@@ -22,7 +22,6 @@ class PostCreateAndUpdate(BaseModel):
     text: str = Field(default=None)
     pub_date: dati = Field(default=None)
     is_published: bool = Field(default=None)
-    image: str = Field(default=None)
     location_name: str = Field(default=None)
     category_slug: str = Field(default=None)
 
@@ -61,3 +60,6 @@ class PostDetail(PostOut):
 
     class Config:
         from_attributes = True
+
+class PostImage(BaseModel):
+    image: str = Field(default=None)
