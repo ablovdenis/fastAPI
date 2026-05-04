@@ -23,7 +23,7 @@ services:
     build: .
     volumes:
       - ./src:/app/src
-      - ./images:/images
+      - images:/app/images
       - ./migrations:/app/migrations
     env_file:
       - .env
@@ -46,3 +46,4 @@ networks:
 
 volumes:
   db_data:
+  images:
