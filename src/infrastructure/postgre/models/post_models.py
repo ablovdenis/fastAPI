@@ -11,7 +11,7 @@ class PostModel(Base):
     text = Column(Text, nullable=False)
     title = Column(String, nullable=False)
     is_published = Column(Boolean, default=True, nullable=False)
-    pub_date = Column(DateTime, nullable=False)
+    pub_date = Column(DateTime(timezone=True), default=dati.utcnow)
     image = Column(String, default="", nullable=True)
 
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)

@@ -1,6 +1,8 @@
 from typing import List
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.category_models import CategoryModel
 from ..models.location_models import LocationModel
@@ -17,133 +19,134 @@ class PostRepository:
     def __init__(self):
         pass
 
-    def get(self, DataBase: Session,
+    async def get(self, DataBase: AsyncSession,
             skip: int,
             limit: int,
             published_only: bool) -> List[PostModel]:
-        query = DataBase.query(PostModel)
+        stmt = select(PostModel)
         if published_only:
-            query = query.filter(PostModel.is_published.is_(True))
-        return query.order_by(PostModel.pub_date.desc()).offset(skip).limit(limit).all()
+            stmt = stmt.where(PostModel.is_published.is_(True))
+        stmt = stmt.order_by(PostModel.pub_date.desc()).offset(skip).limit(limit)
+        result = await DataBase.execute(stmt)
+        return result.scalars().all()
 
-    def get_detail(self, DataBase: Session, post_id: int) -> PostModel:
-        post = (
-            DataBase.query(PostModel)
+    async def get_detail(self, DataBase: AsyncSession, post_id: int) -> PostModel:
+        stmt = (
+            select(PostModel)
+            .where(PostModel.id == post_id)
             .options(
-                joinedload(PostModel.author),
-                joinedload(PostModel.category),
-                joinedload(PostModel.location),
-                joinedload(PostModel.comments),
+                selectinload(PostModel.author),
+                selectinload(PostModel.category),
+                selectinload(PostModel.location),
+                selectinload(PostModel.comments),
             )
-            .filter(PostModel.id == post_id)
-            .first()
         )
+        result = await DataBase.execute(stmt)
+        post = result.unique().scalar_one_or_none()
         if not post:
             raise PostNotFoundException()
         return post
 
-    def create(self, DataBase: Session, payload: PostCreateAndUpdate,
+    async def create(self, DataBase: AsyncSession, payload: PostCreateAndUpdate,
                nickname: str) -> PostModel:
-        author = DataBase.query(UserModel).filter(
-            UserModel.nickname == nickname
-        ).first()
+        stmt_user = select(UserModel).where(UserModel.nickname == nickname)
+        user_result = await DataBase.execute(stmt_user)
+        author = user_result.scalar_one_or_none()
         if not author:
             raise UserNotFoundException()
 
-        category = DataBase.query(CategoryModel).filter(
-            CategoryModel.slug == payload.category_slug
-        ).first()
+        stmt_cat = select(CategoryModel).where(CategoryModel.slug == payload.category_slug)
+        cat_result = await DataBase.execute(stmt_cat)
+        category = cat_result.scalar_one_or_none()
         if not category:
             raise CategoryNotFoundException()
 
-        location = DataBase.query(LocationModel).filter(
-            LocationModel.name == payload.location_name
-        ).first()
+        stmt_loc = select(LocationModel).where(LocationModel.name == payload.location_name)
+        loc_result = await DataBase.execute(stmt_loc)
+        location = loc_result.scalar_one_or_none()
         if not location:
             raise LocationNotFoundException()
 
-        dict_ = (payload.model_dump(
-                    exclude={'location_name',
-                             'author_nickname',
-                             'category_slug'}
-                    ) |
-                 {'location_id':location.id,
-                  'category_id':category.id,
-                  'author_id':author.id})
+        dict_ = payload.model_dump(exclude={'location_name', 'author_nickname', 'category_slug'})
+        dict_.update(
+            location_id=location.id,
+            category_id=category.id,
+            author_id=author.id,
+        )
         post = PostModel(**dict_)
         DataBase.add(post)
-        DataBase.commit()
-        DataBase.refresh(post)
+        await DataBase.commit()
+        await DataBase.refresh(post)
         return post
 
-    def update_without_image(self, DataBase: Session, payload: PostCreateAndUpdate,
+    async def update_without_image(self, DataBase: AsyncSession, payload: PostCreateAndUpdate,
                post_id: int, nickname: str) -> PostModel:
-        post = DataBase.query(PostModel).filter(PostModel.id == post_id).first()
+        stmt_post = select(PostModel).where(PostModel.id == post_id)
+        post_result = await DataBase.execute(stmt_post)
+        post = post_result.scalar_one_or_none()
         if not post:
             raise PostNotFoundException()
-        
-        user_by_nickname = DataBase.query(UserModel).filter(
-            UserModel.nickname == nickname
-        ).first()
-        if post.author_id != user_by_nickname.id:
+
+        stmt_user = select(UserModel).where(UserModel.nickname == nickname)
+        user_result = await DataBase.execute(stmt_user)
+        user = user_result.scalar_one_or_none()
+        if not user or post.author_id != user.id:
             raise CredentialException()
 
-        dop_dict = {}
-
-        if payload.category_slug:
-            category = DataBase.query(CategoryModel).filter(
-                CategoryModel.slug == payload.category_slug
-            ).first()
+        update_data = payload.model_dump(exclude_unset=True)
+        if 'category_slug' in update_data:
+            stmt_cat = select(CategoryModel).where(CategoryModel.slug == payload.category_slug)
+            cat_result = await DataBase.execute(stmt_cat)
+            category = cat_result.scalar_one_or_none()
             if not category:
                 raise CategoryNotFoundException()
-            dop_dict['category_id'] = category.id
+            update_data['category_id'] = category.id
+            del update_data['category_slug']
 
-        if payload.location_name:
-            location = DataBase.query(LocationModel).filter(
-                LocationModel.name == payload.location_name
-            ).first()
+        if 'location_name' in update_data:
+            stmt_loc = select(LocationModel).where(LocationModel.name == payload.location_name)
+            loc_result = await DataBase.execute(stmt_loc)
+            location = loc_result.scalar_one_or_none()
             if not location:
                 raise LocationNotFoundException()
-            dop_dict['location_id'] = location.id
+            update_data['location_id'] = location.id
+            del update_data['location_name']
 
-        dict_ = (payload.model_dump(
-                    exclude={'location_name',
-                             'author_nickname',
-                             'category_slug'}
-                    ) | dop_dict)
+        update_data.pop('author_nickname', None)
 
-        for field, value in dict_.items():
+        for field, value in update_data.items():
             setattr(post, field, value)
-        DataBase.commit()
-        DataBase.refresh(post)
+
+        await DataBase.commit()
+        await DataBase.refresh(post)
         return post
 
-    def update_image(self, DataBase: Session, image: str,
+    async def update_image(self, DataBase: AsyncSession, image: str,
                post_id: int, nickname: int) -> PostModel:
-        post = DataBase.query(PostModel).filter(PostModel.id == post_id).first()
+        stmt_post = select(PostModel).where(PostModel.id == post_id)
+        post_result = await DataBase.execute(stmt_post)
+        post = post_result.scalar_one_or_none()
         if not post:
             raise PostNotFoundException()
-        
-        user_by_nickname = DataBase.query(UserModel).filter(
-            UserModel.nickname == nickname
-        ).first()
-        if post.author_id != user_by_nickname.id:
+
+        stmt_user = select(UserModel).where(UserModel.nickname == nickname)
+        user_result = await DataBase.execute(stmt_user)
+        user = user_result.scalar_one_or_none()
+        if not user or post.author_id != user.id:
             raise CredentialException()
 
         post.image = image
-
-        DataBase.commit()
-        DataBase.refresh(post)
+        await DataBase.commit()
+        await DataBase.refresh(post)
         return post
 
-    def destroy(self, DataBase: Session, post_id: int, nickname: str):
-        post = DataBase.query(PostModel).filter(PostModel.id == post_id).first()
-        if not post:
-            raise PostNotFoundException()
-        user_by_nickname = DataBase.query(UserModel).filter(
-            UserModel.nickname == nickname
-        ).first()
-        if post.author_id != user_by_nickname.id:
+    async def destroy(self, DataBase: AsyncSession, post_id: int, nickname: str):
+        post = await self.get_detail(DataBase, post_id)
+        stmt_user = select(UserModel).where(UserModel.nickname == nickname)
+        user_result = await DataBase.execute(stmt_user)
+        user = user_result.scalar_one_or_none()
+        if not user or post.author_id != user.id:
             raise CredentialException()
-        DataBase.delete(post)
-        DataBase.commit()
+
+        await DataBase.delete(post)
+        await DataBase.commit()

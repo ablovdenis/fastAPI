@@ -8,7 +8,7 @@ from src.core.config import settings
 logger = logging.getLogger(__name__)
 
 class CreateAccessTokenUseCase:
-    def create_token(
+    async def create_token(
             self, nickname: str,
             expires_delta: timedelta | None = None
         ) -> str:

@@ -1,7 +1,8 @@
 from typing import List
 
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.location_models import LocationModel
 from ....schems.locations import LocationUpdateAndCreate
@@ -12,47 +13,41 @@ class LocationRepository:
     def __init__(self):
         pass
 
-    def get(self, DataBase: Session, skip: int, limit: int) -> List[LocationModel]:
-        return DataBase.query(LocationModel).offset(skip).limit(limit).all()
+    async def get(self, DataBase: AsyncSession, skip: int, limit: int) -> List[LocationModel]:
+        stmt = select(LocationModel).offset(skip).limit(limit)
+        result = await DataBase.execute(stmt)
+        return result.scalars().all()
 
-    def get_detail(self, DataBase: Session, name: str) -> LocationModel:
-        location = DataBase.query(LocationModel).filter(
-            LocationModel.name == name
-        ).first()
+    async def get_detail(self, DataBase: AsyncSession, name: str) -> LocationModel:
+        stmt = select(LocationModel).where(LocationModel.name == name)
+        result = await DataBase.execute(stmt)
+        location = result.scalar_one_or_none()
         if not location:
             raise LocationNotFoundException()
         return location
 
-    def create(self, DataBase: Session, payload: LocationUpdateAndCreate) -> LocationModel:
+    async def create(self, DataBase: AsyncSession, payload: LocationUpdateAndCreate) -> LocationModel:
         location = LocationModel(**payload.model_dump())
+        DataBase.add(location)
         try:
-            DataBase.add(location)
-            DataBase.commit()
+            await DataBase.commit()
         except IntegrityError:
             raise LocationAlreadyExistsException()
-        DataBase.refresh(location)
+        await DataBase.refresh(location)
         return location
 
-    def update(self, DataBase: Session, name: str, payload: LocationUpdateAndCreate) -> LocationModel:
-        location = DataBase.query(LocationModel).filter(
-            LocationModel.name == name
-        ).first()
-        if not location:
-            raise LocationNotFoundException()
+    async def update(self, DataBase: AsyncSession, name: str, payload: LocationUpdateAndCreate) -> LocationModel:
+        location = await self.get_detail(DataBase, name)
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(location, field, value)
         try:
-            DataBase.commit()
+            await DataBase.commit()
         except IntegrityError:
             raise LocationAlreadyExistsException()
-        DataBase.refresh(location)
+        await DataBase.refresh(location)
         return location
 
-    def destroy(self, DataBase: Session, name: str):
-        location = DataBase.query(LocationModel).filter(
-            LocationModel.name == name
-        ).first()
-        if not location:
-            raise LocationNotFoundException()
-        DataBase.delete(location)
-        DataBase.commit()
+    async def destroy(self, DataBase: AsyncSession, name: str):
+        location = await self.get_detail(DataBase, name)
+        await DataBase.delete(location)
+        await DataBase.commit()

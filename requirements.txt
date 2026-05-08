@@ -2,6 +2,7 @@ alembic==1.18.4
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.12.1
+asyncpg==0.31.0
 bcrypt==4.0.1
 certifi==2026.2.25
 click==8.3.1
@@ -32,7 +33,6 @@ packaging==26.0
 passlib==1.7.4
 pip==26.0.1
 pluggy==1.6.0
-psycopg2-binary==2.9.12
 pyasn1==0.6.3
 pydantic==2.12.5
 pydantic-core==2.41.5

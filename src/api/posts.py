@@ -3,7 +3,7 @@ import logging
 from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.services.auth import get_current_user
 
@@ -26,26 +26,26 @@ router = APIRouter(prefix='/posts', tags=['Посты'])
 
 @router.get('/all', response_model=List[PostOut],
             summary='Публикации:')
-def list_posts(
+async def list_posts(
     skip: int = 0,
     limit: int = 20,
     published_only: bool = False,
-    DataBase: Session = Depends(get_db)
+    DataBase: AsyncSession = Depends(get_db)
 ) -> List[PostOut]:
     logger.info(f"Запрос списка постов: skip={skip}, limit={limit}, published_only={published_only}")
     use_case = MethodsForPost()
-    result = use_case.get(DataBase, skip, limit, published_only)
+    result = await use_case.get(DataBase, skip, limit, published_only)
     logger.info(f"Возвращено {len(result)} постов")
     return result
 
 
 @router.get('/{post_id}', response_model=PostDetail,
             summary='Получить публикацию:')
-def get_post(post_id: int, DataBase: Session = Depends(get_db)) -> PostDetail:
+async def get_post(post_id: int, DataBase: AsyncSession = Depends(get_db)) -> PostDetail:
     logger.info(f"Запрос поста с id={post_id}")
     use_case = MethodsForPost()
     try:
-        result = use_case.get_detail(DataBase, post_id)
+        result = await use_case.get_detail(DataBase, post_id)
         logger.info(f"Пост id={post_id} найден")
         return result
     except PostNotFoundByIDException as e:
@@ -56,12 +56,12 @@ def get_post(post_id: int, DataBase: Session = Depends(get_db)) -> PostDetail:
 @router.get("/image/{post_id}", response_class=FileResponse, summary='Получить изображение:')
 async def get_post_image(
     post_id: int,
-    DataBase: Session = Depends(get_db),
+    DataBase: AsyncSession = Depends(get_db),
 ) -> FileResponse:
     logger.info(f"Запрос изображения для поста id={post_id}")
     use_case = MethodsForImage()
     try:
-        result = use_case.get_detail_image(DataBase, post_id)
+        result = await use_case.get_detail_image(DataBase, post_id)
         logger.info(f"Изображение поста {post_id} отправлено")
         return result
     except PostNotFoundByIDException as e:
@@ -75,12 +75,12 @@ async def get_post_image(
 @router.post('/', response_model=PostOut,
              status_code=status.HTTP_201_CREATED,
              summary='Создать публикацию:')
-def create_post(payload: PostCreateAndUpdate, DataBase: Session = Depends(get_db),
+async def create_post(payload: PostCreateAndUpdate, DataBase: AsyncSession = Depends(get_db),
                 user: UserOut = Depends(get_current_user)) -> PostOut:
     logger.info(f"Попытка создания поста пользователем {user.nickname}")
     use_case = MethodsForPost()
     try:
-        result = use_case.create(DataBase, payload, user.nickname)
+        result = await use_case.create(DataBase, payload, user.nickname)
         logger.info(f"Пост создан: id={result.id} пользователем {user.nickname}")
         return result
     except PostDontCreateException as e:
@@ -90,12 +90,12 @@ def create_post(payload: PostCreateAndUpdate, DataBase: Session = Depends(get_db
 
 @router.post("/image/{post_id}", status_code=status.HTTP_201_CREATED, response_model=PostImage,
              summary='Прикрепить картинку к публикации:')
-async def add_post_image(post_id: int, image: UploadFile = File(...), DataBase: Session = Depends(get_db),
+async def add_post_image(post_id: int, image: UploadFile = File(...), DataBase: AsyncSession = Depends(get_db),
                          user: UserOut = Depends(get_current_user)) -> PostImage:
     logger.info(f"Попытка добавить изображение к посту {post_id} от пользователя {user.nickname}")
     use_case = MethodsForImage()
     try:
-        result = use_case.add_image(DataBase, post_id, image, user.nickname)
+        result = await use_case.add_image(DataBase, post_id, image, user.nickname)
         logger.info(f"Изображение добавлено к посту {post_id} пользователем {user.nickname}")
         return result
     except PostNotFoundByIDException as e:
@@ -111,13 +111,13 @@ async def add_post_image(post_id: int, image: UploadFile = File(...), DataBase: 
 
 @router.put('/{post_id}', response_model=PostOut,
             summary='Изменить публикацию:')
-def update_post(post_id: int, payload: PostCreateAndUpdate,
-                DataBase: Session = Depends(get_db),
+async def update_post(post_id: int, payload: PostCreateAndUpdate,
+                DataBase: AsyncSession = Depends(get_db),
                 user: UserOut = Depends(get_current_user)) -> PostOut:
     logger.info(f"Попытка обновления поста {post_id} пользователем {user.nickname}")
     use_case = MethodsForPost()
     try:
-        result = use_case.update(DataBase, payload, post_id, user.nickname)
+        result = await use_case.update(DataBase, payload, post_id, user.nickname)
         logger.info(f"Пост {post_id} обновлён пользователем {user.nickname}")
         return result
     except PostNotFoundByIDException as e:
@@ -130,12 +130,12 @@ def update_post(post_id: int, payload: PostCreateAndUpdate,
 
 @router.delete('/{post_id}', status_code=status.HTTP_204_NO_CONTENT,
                summary='Удалить публикацию:')
-def delete_post(post_id: int, DataBase: Session = Depends(get_db),
+async def delete_post(post_id: int, DataBase: AsyncSession = Depends(get_db),
                 user: UserOut = Depends(get_current_user)):
     logger.info(f"Попытка удаления поста {post_id} пользователем {user.nickname}")
     use_case = MethodsForPost()
     try:
-        use_case.destroy(DataBase, post_id, user.nickname)
+        await use_case.destroy(DataBase, post_id, user.nickname)
         logger.info(f"Пост {post_id} удалён пользователем {user.nickname}")
     except PostNotFoundByIDException as e:
         logger.warning(f"Пост {post_id} не найден для удаления")
@@ -147,12 +147,12 @@ def delete_post(post_id: int, DataBase: Session = Depends(get_db),
 
 @router.delete('/image/{post_id}', status_code=status.HTTP_204_NO_CONTENT,
                summary='Удалить изображение:')
-def delete_image_post(post_id: int, DataBase: Session = Depends(get_db),
+async def delete_image_post(post_id: int, DataBase: AsyncSession = Depends(get_db),
                       user: UserOut = Depends(get_current_user)):
     logger.info(f"Попытка удаления изображения поста {post_id} пользователем {user.nickname}")
     use_case = MethodsForImage()
     try:
-        use_case.destroy_image(DataBase, post_id, user.nickname)
+        await use_case.destroy_image(DataBase, post_id, user.nickname)
         logger.info(f"Изображение поста {post_id} удалено пользователем {user.nickname}")
     except PostNotFoundByIDException as e:
         logger.warning(f"Пост {post_id} не найден при удалении изображения")

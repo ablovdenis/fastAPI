@@ -1,7 +1,8 @@
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from typing import List
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.user_models import UserModel
 from ....schems.users import UserCreate, UserUpdate
@@ -14,22 +15,24 @@ class UserRepository:
     def __init__(self):
         pass
 
-    def get(self, DataBase: Session, skip: int, limit: int) -> List[UserModel]:
-        return DataBase.query(UserModel).offset(skip).limit(limit).all()
+    async def get(self, db: AsyncSession, skip: int, limit: int) -> List[UserModel]:
+        stmt = select(UserModel).offset(skip).limit(limit)
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_detail(self, DataBase: Session, nickname: str) -> UserModel:
-        user = DataBase.query(UserModel).filter(UserModel.nickname == nickname).first()
+    async def get_detail(self, db: AsyncSession, nickname: str) -> UserModel:
+        stmt = select(UserModel).where(UserModel.nickname == nickname)
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
         if not user:
             raise UserNotFoundException()
         return user
 
-    def create(self, DataBase: Session, payload: UserCreate) -> UserModel:
-        user = UserModel(
-            **payload.model_dump()
-        )
+    async def create(self, db: AsyncSession, payload: UserCreate) -> UserModel:
+        user = UserModel(**payload.model_dump())
+        db.add(user)
         try:
-            DataBase.add(user)
-            DataBase.commit()
+            await db.commit()
         except IntegrityError as e:
             str_error = str(e.orig)
             if 'nickname' in str_error:
@@ -38,26 +41,22 @@ class UserRepository:
                 raise UserByEmailAlreadyExistsException()
             else:
                 raise IntegrityError
-        DataBase.refresh(user)
+        await db.refresh(user)
         return user
 
-    def update(self, DataBase: Session, nickname: str, payload: UserUpdate) -> UserModel:
-        user = DataBase.query(UserModel).filter(UserModel.nickname == nickname).first()
-        if not user:
-            raise UserNotFoundException()
+    async def update(self, db: AsyncSession, nickname: str, payload: UserUpdate) -> UserModel:
+        user = await self.get_detail(db, nickname)
         update_data = payload.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(user, field, value)
         try:
-            DataBase.commit()
+            await db.commit()
         except IntegrityError:
             raise UserByEmailAlreadyExistsException()
-        DataBase.refresh(user)
+        await db.refresh(user)
         return user
 
-    def destroy(self, DataBase: Session, nickname: str):
-        user = DataBase.query(UserModel).filter(UserModel.nickname == nickname).first()
-        if not user:
-            raise UserNotFoundException()
-        DataBase.delete(user)
-        DataBase.commit()
+    async def destroy(self, db: AsyncSession, nickname: str) -> None:
+        user = await self.get_detail(db, nickname)
+        await db.delete(user)
+        await db.commit()

@@ -1,7 +1,7 @@
 import os
 from typing import List
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ....infrastructure.postgre.repositories.posts import PostRepository
 from ....schems.posts import PostCreateAndUpdate, PostDetail, PostOut
@@ -19,20 +19,20 @@ class MethodsForPost:
     def __init__(self):
         self._repo = PostRepository()
 
-    def get(self, DataBase: Session, skip: int, limit: int, published_only: bool) -> List[PostOut]:
-        return [PostOut.model_validate(user) for user in self._repo.get(DataBase, skip, limit, published_only)]
+    async def get(self, DataBase: AsyncSession, skip: int, limit: int, published_only: bool) -> List[PostOut]:
+        return [PostOut.model_validate(user) for user in await self._repo.get(DataBase, skip, limit, published_only)]
 
-    def get_detail(self, DataBase: Session, post_id: int) -> PostDetail:
+    async def get_detail(self, DataBase: AsyncSession, post_id: int) -> PostDetail:
         try:
-            post_model = self._repo.get_detail(DataBase, post_id)
+            post_model = await self._repo.get_detail(DataBase, post_id)
         except PostNotFoundException:
             raise PostNotFoundByIDException(post_id)
         return PostDetail.model_validate(post_model)
 
-    def create(self, DataBase: Session, payload: PostCreateAndUpdate,
+    async def create(self, DataBase: AsyncSession, payload: PostCreateAndUpdate,
                nickname: str) -> PostOut:
         try:
-            post_model = self._repo.create(DataBase, payload, nickname)
+            post_model = await self._repo.create(DataBase, payload, nickname)
         except UserNotFoundException:
             raise PostDontCreateException('автор не найден')
         except CategoryNotFoundException:
@@ -41,10 +41,10 @@ class MethodsForPost:
             raise PostDontCreateException('локация не найдена')
         return PostOut.model_validate(post_model)
 
-    def update(self, DataBase: Session, payload: PostCreateAndUpdate,
+    async def update(self, DataBase: AsyncSession, payload: PostCreateAndUpdate,
                post_id: int, nickname: int) -> PostOut:
         try:
-            post_model = self._repo.update_without_image(DataBase, payload, post_id, nickname)
+            post_model = await self._repo.update_without_image(DataBase, payload, post_id, nickname)
         except PostNotFoundException:
             raise PostNotFoundByIDException(post_id)
         except CategoryNotFoundException:
@@ -55,10 +55,11 @@ class MethodsForPost:
             raise PostDontChangeException('данный пост не принадлежит этому пользователю')
         return PostOut.model_validate(post_model)
     
-    def destroy(self, DataBase: Session, post_id: int, nickname: str, image_folder="images"):
+    async def destroy(self, DataBase: AsyncSession, post_id: int, nickname: str, image_folder="images"):
         try:
-            image = self._repo.get_detail(DataBase, post_id).image
-            self._repo.destroy(DataBase, post_id, nickname)
+            post = await self._repo.get_detail(DataBase, post_id)
+            image = post.image
+            await self._repo.destroy(DataBase, post_id, nickname)
             if image:
                 image_path = f"{image_folder}/{image}"
                 os.remove(image_path)

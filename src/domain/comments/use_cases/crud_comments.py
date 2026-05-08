@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ....infrastructure.postgre.repositories.comments import CommentRepository
 from ....schems.comments import CommentCreate, CommentOut, CommentUpdate
@@ -17,41 +17,41 @@ class MethodsForComment:
     def __init__(self):
         self._repo = CommentRepository()
 
-    def get(self, DataBase: Session, post_id: int | None, skip: int, limit: int) -> List[CommentOut]:
+    async def get(self, DataBase: AsyncSession, post_id: int | None, skip: int, limit: int) -> List[CommentOut]:
         try:
-            return [CommentOut.model_validate(user) for user in self._repo.get(DataBase, post_id, skip, limit)]
+            return [CommentOut.model_validate(user) for user in await self._repo.get(DataBase, post_id, skip, limit)]
         except PostNotFoundException:
             raise PostNotFoundByIDException(post_id)
 
-    def get_detail(self, DataBase: Session, comment_id: int) -> CommentOut:
+    async def get_detail(self, DataBase: AsyncSession, comment_id: int) -> CommentOut:
         try:
-            comment_model = self._repo.get_detail(DataBase, comment_id)
+            comment_model = await self._repo.get_detail(DataBase, comment_id)
         except CommentNotFoundException:
             raise CommentNotFoundByIDException(comment_id)
         return CommentOut.model_validate(comment_model)
 
-    def create(self, DataBase: Session, payload: CommentCreate, author_id: int) -> CommentOut:
+    async def create(self, DataBase: AsyncSession, payload: CommentCreate, author_id: int) -> CommentOut:
         try:
-            comment_model = self._repo.create(DataBase, payload, author_id)
+            comment_model = await self._repo.create(DataBase, payload, author_id)
         except PostNotFoundException:
             raise CommentDontCreateException('пост не найден')
         except UserNotFoundException:
             raise CommentDontCreateException('автор не найден')
         return CommentOut.model_validate(comment_model)
 
-    def update(self, DataBase: Session, comment_id: int, payload: CommentUpdate,
+    async def update(self, DataBase: AsyncSession, comment_id: int, payload: CommentUpdate,
                author_id: str) -> CommentOut:
         try:
-            comment_model = self._repo.update(DataBase, comment_id, payload, author_id)
+            comment_model = await self._repo.update(DataBase, comment_id, payload, author_id)
         except CommentNotFoundException:
             raise CommentNotFoundByIDException(comment_id)
         except CredentialException:
             raise CommentDontChangeException('данный пост не принадлежит этому пользователю')
         return CommentOut.model_validate(comment_model)
     
-    def destroy(self, DataBase: Session, comment_id: int, author_id: int):
+    async def destroy(self, DataBase: AsyncSession, comment_id: int, author_id: int):
         try:
-            self._repo.destroy(DataBase, comment_id, author_id)
+            await self._repo.destroy(DataBase, comment_id, author_id)
         except CommentNotFoundException:
             raise CommentNotFoundByIDException(comment_id)
         except CredentialException:

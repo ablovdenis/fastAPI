@@ -1,6 +1,6 @@
 from fastapi import Depends
 from jose import JWTError, jwt
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions.database_exceptions import UserNotFoundException
 from src.core.exceptions.auth_exceptions import CredentialsException
@@ -14,7 +14,9 @@ from src.infrastructure.postgre.repositories.users import UserRepository
 from src.resources.auth import oauth2_scheme
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> UserOut:
+async def get_current_user(
+        token: str = Depends(oauth2_scheme),
+        DataBase: AsyncSession = Depends(get_db)) -> UserOut:
     AUTH_MESSAGE_EXCEPTION = "Данные авторизации не получилось проверить."
     repo: UserRepository = UserRepository()
 
@@ -32,8 +34,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> UserOut:
         raise CredentialsException(detail=AUTH_MESSAGE_EXCEPTION)
 
     try:
-        db: Session = next(get_db())
-        user = repo.get_detail(db, nickname)
+        user = await repo.get_detail(DataBase, nickname)
     except UserNotFoundException:
         raise CredentialsException(detail=AUTH_MESSAGE_EXCEPTION)
 

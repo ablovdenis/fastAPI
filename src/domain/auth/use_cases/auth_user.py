@@ -1,9 +1,8 @@
 # WrongUserPasswordException
 import logging
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.infrastructure.postgre.database import get_db
 from src.infrastructure.postgre.repositories.users import UserRepository
 from src.schems.users import UserOut
 from src.resources.auth import verify_password
@@ -16,11 +15,11 @@ class AuthenticateUserUseCase:
     def __init__(self) -> None:
         self._repo = UserRepository()
 
-    def get_detail(self, DataBase: Session, nickname: str, password: str,
+    async def get_detail(self, DataBase: AsyncSession, nickname: str, password: str,
     ) -> UserOut:
         logger.info(f"Попытка аутентификации пользователя: {nickname}")
         try:
-            user_model = self._repo.get_detail(DataBase, nickname)
+            user_model = await self._repo.get_detail(DataBase, nickname)
             logger.debug(f"Пользователь {nickname} найден в БД")
         except UserNotFoundException:
             logger.warning(f"Пользователь {nickname} не найден")

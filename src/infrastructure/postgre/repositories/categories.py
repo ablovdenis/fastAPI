@@ -1,7 +1,8 @@
 from typing import List
 
+from sqlalchemy import select, delete
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.category_models import CategoryModel
 from ....schems.categories import CategoryUpdateAndCreate
@@ -12,47 +13,43 @@ class CategoryRepository:
     def __init__(self):
         pass
 
-    def get(self, DataBase: Session, skip: int, limit: int) -> List[CategoryModel]:
-        return DataBase.query(CategoryModel).offset(skip).limit(limit).all()
+    async def get(self, DataBase: AsyncSession, skip: int, limit: int) -> List[CategoryModel]:
+        stmt = select(CategoryModel).offset(skip).limit(limit)
+        result = await DataBase.execute(stmt)
+        return result.scalars().all()
 
-    def get_detail(self, DataBase: Session, category_slug: str) -> CategoryModel:
-        category = DataBase.query(CategoryModel).filter(
-            CategoryModel.slug == category_slug
-        ).first()
+    async def get_detail(self, DataBase: AsyncSession, category_slug: str) -> CategoryModel:
+        stmt = select(CategoryModel).where(CategoryModel.slug == category_slug)
+        result = await DataBase.execute(stmt)
+        category = result.scalar_one_or_none()
         if not category:
             raise CategoryNotFoundException()
         return category
 
-    def create(self, DataBase: Session, payload: CategoryUpdateAndCreate) -> CategoryModel:
+    async def create(self, DataBase: AsyncSession, payload: CategoryUpdateAndCreate) -> CategoryModel:
         category = CategoryModel(**payload.model_dump())
+        DataBase.add(category)
         try:
-            DataBase.add(category)
-            DataBase.commit()
+            await DataBase.commit()
         except IntegrityError:
             raise CategoryAlreadyExistsException()
-        DataBase.refresh(category)
+        await DataBase.refresh(category)
         return category
 
-    def update(self, DataBase: Session, category_slug: str, payload: CategoryUpdateAndCreate) -> CategoryModel:
-        category = DataBase.query(CategoryModel).filter(
-            CategoryModel.slug == category_slug
-        ).first()
-        if not category:
-            raise CategoryNotFoundException()
+    async def update(self, DataBase: AsyncSession, category_slug: str, payload: CategoryUpdateAndCreate) -> CategoryModel:
+        category = await self.get_detail(DataBase, category_slug)
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(category, field, value)
         try:
-            DataBase.commit()
+            await DataBase.commit()
         except IntegrityError:
             raise CategoryAlreadyExistsException()
-        DataBase.refresh(category)
+        await DataBase.refresh(category)
         return category
 
-    def destroy(self, DataBase: Session, category_slug: str):
-        category = DataBase.query(CategoryModel).filter(
-            CategoryModel.slug == category_slug
-        ).first()
-        if not category:
+    async def destroy(self, DataBase: AsyncSession, category_slug: str):
+        stmt = delete(CategoryModel).where(CategoryModel.slug == category_slug)
+        result = await DataBase.execute(stmt)
+        await DataBase.commit()
+        if result.rowcount == 0:
             raise CategoryNotFoundException()
-        DataBase.delete(category)
-        DataBase.commit()

@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infrastructure.postgre.database import get_db
 from src.schems.auth import Token
@@ -17,15 +17,15 @@ router = APIRouter()
 
 
 @router.post("/token", response_model=Token)
-def login_for_access_token(
+async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     auth_use_case: AuthenticateUserUseCase = Depends(auth_user_use_case),
     create_token_use_case: CreateAccessTokenUseCase = Depends(create_access_token_use_case),
-    DataBase: Session = Depends(get_db)
+    DataBase: AsyncSession = Depends(get_db)
 ) -> Token:
     logger.info(f"Попытка входа в систему: username={form_data.username}")
     try:
-        user = auth_use_case.get_detail(DataBase, form_data.username, form_data.password)
+        user = await auth_use_case.get_detail(DataBase, form_data.username, form_data.password)
         logger.info(f"Пользователь {form_data.username} успешно аутентифицирован")
     except WrongUserPasswordException as exc:
         logger.warning(f"Неудачная попытка входа: username={form_data.username} - неверный пароль")
@@ -38,6 +38,6 @@ def login_for_access_token(
         logger.warning(f"Неудачная попытка входа: username={form_data.username} - пользователь не найден")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.get_detail())
 
-    access_token = create_token_use_case.create_token(user.nickname)
+    access_token = await create_token_use_case.create_token(user.nickname)
     logger.info(f"Для пользователя {form_data.username} выдан JWT токен (токен не логируется)")
     return Token(access_token=access_token, token_type="bearer")
