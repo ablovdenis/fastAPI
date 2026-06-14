@@ -40,7 +40,7 @@ class MethodsForComment:
         return CommentOut.model_validate(comment_model)
 
     async def update(self, DataBase: AsyncSession, comment_id: int, payload: CommentUpdate,
-               author_id: str) -> CommentOut:
+               author_id: int) -> CommentOut:
         try:
             comment_model = await self._repo.update(DataBase, comment_id, payload, author_id)
         except CommentNotFoundException:

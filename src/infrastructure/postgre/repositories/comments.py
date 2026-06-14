@@ -47,7 +47,7 @@ class CommentRepository:
         return comment
 
 
-    async def update(self, DataBase: AsyncSession, comment_id: int, payload: CommentUpdate, author_id: str) -> CommentModel:
+    async def update(self, DataBase: AsyncSession, comment_id: int, payload: CommentUpdate, author_id: int) -> CommentModel:
         comment = await self.get_detail(DataBase, comment_id)
         if comment.author_id != author_id:
             raise CredentialException()
@@ -57,7 +57,7 @@ class CommentRepository:
         await DataBase.refresh(comment)
         return comment
 
-    async def destroy(self, DataBase: AsyncSession, comment_id: int, author_id: str):
+    async def destroy(self, DataBase: AsyncSession, comment_id: int, author_id: int):
         comment = await self.get_detail(DataBase, comment_id)
         if comment.author_id != author_id:
             raise CredentialException()

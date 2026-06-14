@@ -1,23 +1,24 @@
 from pydantic import SecretStr
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    ORIGINS: str
+    ORIGINS: str = ''
     PORT: int = 8000
     ROOT_PATH: str = ''
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 5
-    SECRET_AUTH_KEY: SecretStr
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 8
+    SECRET_AUTH_KEY: SecretStr = SecretStr('')
     AUTH_ALGORITHM: str = "HS256"
 
-    POSTGRES_SCHEMA: str
-    POSTGRES_HOST: str
-    POSTGRES_DB: str
-    POSTGRES_PORT: int
-    POSTGRES_USER: SecretStr
-    POSTGRES_PASSWORD: SecretStr
-    POSTGRES_RECONNECT_INTERVAL_SEC: int
+    POSTGRES_SCHEMA: str = ''
+    POSTGRES_HOST: str = ''
+    POSTGRES_DB: str = ''
+    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: SecretStr = SecretStr('')
+    POSTGRES_PASSWORD: SecretStr = SecretStr('')
+    POSTGRES_RECONNECT_INTERVAL_SEC: int = 1
 
     @property
     def postgres_url(self) -> str:

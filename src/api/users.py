@@ -31,7 +31,7 @@ async def list_users(skip: int = 0, limit: int = 20, DataBase: AsyncSession = De
 
 
 @router.get('/{nickname}', response_model=UserOut, summary='Получить любого пользователя по никнейму:')
-async def get_user(nickname: str, DataBase: AsyncSession = Depends(get_db),
+async def get_user_any(nickname: str, DataBase: AsyncSession = Depends(get_db),
              _: UserOut = Depends(get_current_user)) -> UserOut:
     logger.info(f"Запрос пользователя по никнейму='{nickname}'")
     use_case = MethodsForUser()
