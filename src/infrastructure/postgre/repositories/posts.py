@@ -122,7 +122,7 @@ class PostRepository:
         return post
 
     async def update_image(self, DataBase: AsyncSession, image: str,
-               post_id: int, nickname: int) -> PostModel:
+               post_id: int, nickname: str) -> PostModel:
         stmt_post = select(PostModel).where(PostModel.id == post_id)
         post_result = await DataBase.execute(stmt_post)
         post = post_result.scalar_one_or_none()
@@ -150,3 +150,4 @@ class PostRepository:
 
         await DataBase.delete(post)
         await DataBase.commit()
+        

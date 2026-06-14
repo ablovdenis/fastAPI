@@ -57,12 +57,7 @@ class MethodsForPost:
     
     async def destroy(self, DataBase: AsyncSession, post_id: int, nickname: str, image_folder="images"):
         try:
-            post = await self._repo.get_detail(DataBase, post_id)
-            image = post.image
             await self._repo.destroy(DataBase, post_id, nickname)
-            if image:
-                image_path = f"{image_folder}/{image}"
-                os.remove(image_path)
         except PostNotFoundException:
             raise PostNotFoundByIDException(post_id)
         except CredentialException:

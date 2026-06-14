@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 from datetime import datetime as dati
-from typing import List
-
+from typing import List, Optional
+from fastapi import UploadFile
 from .users import UserOut
 from .categories import CategoryOut
 from .locations import LocationOut
@@ -24,7 +24,7 @@ class PostCreateAndUpdate(BaseModel):
     is_published: bool = Field(default=None)
     location_name: str = Field(default=None)
     category_slug: str = Field(default=None)
-
+    images: Optional[List[UploadFile]] = Field(default=None)
     @field_validator("title", mode="after")
     @staticmethod
     def check_title(title: str):
@@ -38,7 +38,7 @@ class PostOut(BaseModel):
     text: str = Field(default=None)
     pub_date: dati = Field(default=None)
     is_published: bool = Field(default=None)
-    image: str = Field(default=None)
+    images: List[PostImage] = Field(default=None)
     location_id: int = Field(default=None)
     category_id: int = Field(default=None)
     author_id: int = Field(default=None)
@@ -62,4 +62,5 @@ class PostDetail(PostOut):
         from_attributes = True
 
 class PostImage(BaseModel):
-    image: str = Field(default=None)
+    id: int
+    filename: str

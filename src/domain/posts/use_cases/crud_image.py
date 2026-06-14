@@ -1,12 +1,14 @@
 import os
 from uuid import uuid4
 import shutil
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi import File
 from fastapi.responses import FileResponse
 
 from src.infrastructure.postgre.repositories.posts import PostRepository
+from src.infrastructure.postgre.models.post_models import PostModel
 from src.core.exceptions.database_exceptions import CredentialException, PostNotFoundException
 from src.schems.posts import PostImage
 from src.core.exceptions.domain_exceptions import ImageDontDestroyException, IsNotAnImageExtensionException, PostDontChangeException, PostHasNoImageException, PostNotFoundByIDException
@@ -55,10 +57,10 @@ class MethodsForImage:
         full_image_path: str = f"{image_folder}/{post_model.image}"
         return FileResponse(full_image_path, media_type=f"image/{extension}")
     
-    async def destroy_image(self, DataBase: AsyncSession, post_id: int, nickname: str, image_folder = "images") -> None:
+    async def destroy_image(self, DataBase: AsyncSession, post_id: int, nickname: str, image_folder: str = "images") -> None:
         try:
             post = await self._repo.get_detail(DataBase, post_id)
-            image = post.image
+            image = str(post.image)
             if image:
                 await self._repo.update_image(DataBase, "", post_id, nickname)
                 image_path = f"{image_folder}/{image}"
@@ -68,4 +70,11 @@ class MethodsForImage:
             raise PostNotFoundByIDException(post_id)
         except CredentialException:
             raise ImageDontDestroyException('пост данного изображения не принадлежит этому пользователю')
-
+    
+@event.listens_for(PostModel, 'after_delete')
+def destroy_image_after_destroy_post(mapper, connection, target) -> None:
+    image_folder: str = "images"
+    image = str(target.image)
+    if image:
+        image_path = f"{image_folder}/{image}"
+        os.remove(image_path)

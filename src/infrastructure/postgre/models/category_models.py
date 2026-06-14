@@ -12,4 +12,4 @@ class CategoryModel(Base):
     is_published = Column(Boolean, default=True, nullable=False)
     description = Column(Text, nullable=False)
     slug = Column(String, unique=True, index=True, nullable=False)
-    posts = relationship("PostModel", back_populates="category", cascade="all, delete-orphan")
+    posts = relationship("PostModel", back_populates="category", passive_deletes=True)

@@ -15,5 +15,5 @@ class UserModel(Base):
     password = Column(String, nullable=False)
     active = Column(Boolean, default=True)
     date_joined = Column(DateTime(timezone=True), default=dati.utcnow)
-    posts = relationship("PostModel", back_populates="author", foreign_keys="PostModel.author_id", cascade="all, delete-orphan")
+    posts = relationship("PostModel", back_populates="author", foreign_keys="PostModel.author_id", passive_deletes=True)
     comments = relationship("CommentModel", back_populates="author", cascade="all, delete-orphan")
